@@ -2,371 +2,91 @@
 <html lang="{{ current_lang }}" dir="{{ 'rtl' if current_lang == 'ar' else 'ltr' }}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نجاحي هو نجاحك - غرف التواصل</title>
+    <title>الرسائل والمجموعات</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-color: #0b0f19;
-            --glass-bg: rgba(17, 24, 39, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-            --accent-glow: #38bdf8;
-            --accent-gradient: linear-gradient(135deg, #38bdf8 0%, #0369a1 100%);
-            --font-family: {% if current_lang == 'ar' %}'Tajawal', sans-serif{% else %}'Inter', sans-serif{% endif %};
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: var(--font-family);
-            background-image: radial-gradient(circle at 5% 10%, rgba(56, 189, 248, 0.08) 0%, transparent 35%),
-                              radial-gradient(circle at 95% 90%, rgba(244, 63, 94, 0.05) 0%, transparent 35%);
-            background-attachment: fixed;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        .navbar {
-            background: rgba(11, 15, 25, 0.8) !important;
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--glass-border);
-        }
-
-        .chat-container {
-            background: var(--glass-bg);
-            backdrop-filter: blur(24px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            height: calc(100vh - 160px);
-            min-height: 580px;
-            overflow: hidden;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
-        }
-
-        .users-sidebar {
-            border-right: 1px solid var(--glass-border);
-            background: rgba(15, 23, 42, 0.4);
-            height: 100%;
-            overflow-y: auto;
-        }
-
-        .chat-area {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .chat-header {
-            padding: 15px 25px;
-            border-bottom: 1px solid var(--glass-border);
-            background: rgba(15, 23, 42, 0.3);
-        }
-
-        .chat-messages {
-            flex: 1;
-            padding: 25px;
-            overflow-y: auto;
-            background: rgba(10, 15, 26, 0.2);
-        }
-
-        .message-row {
-            margin-bottom: 20px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .message-row.sent {
-            align-items: flex-end;
-        }
-
-        .message-row.received {
-            align-items: flex-start;
-        }
-
-        .message-bubble {
-            max-width: 65%;
-            padding: 14px 20px;
-            border-radius: 20px;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-        }
-
-        .sent .message-bubble {
-            background: var(--accent-gradient);
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
-
-        .received .message-bubble {
-            background: rgba(255, 255, 255, 0.06);
-            color: var(--text-main);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-bottom-left-radius: 4px;
-        }
-
-        .chat-input-area {
-            padding: 20px 25px;
-            border-top: 1px solid var(--glass-border);
-            background: rgba(15, 23, 42, 0.5);
-        }
-
-        .input-glass {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--glass-border);
-            color: white;
-            border-radius: 30px;
-            padding: 12px 24px;
-            transition: all 0.3s ease;
-        }
-
-        .input-glass:focus {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: var(--accent-glow);
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
-            color: white;
-        }
-
-        .btn-circle {
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            color: var(--text-main);
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--glass-border);
-            cursor: pointer;
-        }
-
-        .btn-circle:hover {
-            transform: scale(1.08);
-            background: var(--accent-gradient);
-            color: white;
-        }
-
-        .tab-btn {
-            border-radius: 30px;
-            padding: 8px 20px;
-            font-size: 0.9rem;
-            transition: all 0.3s;
-        }
-
-        .user-item {
-            padding: 15px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-decoration: none;
-            display: block;
-            color: var(--text-main);
-        }
-
-        .user-item:hover, .user-item.active {
-            background: rgba(56, 189, 248, 0.08);
-        }
+        body { background-color: #0a0a0a; color: #f3f4f6; font-family: 'Tajawal', sans-serif; }
+        .text-gold { color: #d4af37 !important; }
+        .chat-box { background: #151515; border: 1px solid #333; border-radius: 16px; height: 60vh; overflow-y: auto; padding: 20px; }
+        .msg-bubble { max-width: 75%; padding: 12px 18px; border-radius: 20px; margin-bottom: 15px; }
+        .msg-sent { background: #d4af37; color: #000; margin-left: auto; border-bottom-right-radius: 4px; }
+        .msg-received { background: #222; color: #fff; margin-right: auto; border-bottom-left-radius: 4px; border: 1px solid #444; }
     </style>
 </head>
 <body>
-
-    <nav class="navbar navbar-expand-lg navbar-dark sticky-top mb-4">
+    <nav class="navbar navbar-dark mb-4 border-bottom border-secondary" style="background: rgba(10,10,10,0.9);">
         <div class="container">
-            <a class="navbar-brand fw-bold fs-4 text-white" href="{{ url_for('home') }}">
-                <i class="fa-solid fa-layer-group text-info me-2"></i>منصة نجاحي هو نجاحك
-            </a>
-            <div class="ms-auto">
-                <a class="btn btn-outline-light btn-sm px-4 rounded-pill" href="{{ url_for('home') }}">
-                    <i class="fa-solid fa-house me-1"></i>الرئيسية
-                </a>
-            </div>
+            <a class="navbar-brand fw-bold text-gold" href="{{ url_for('home') }}">منصة نجاحي</a>
+            <a href="{{ url_for('home') }}" class="btn btn-outline-light btn-sm rounded-pill px-4">عودة للرئيسية</a>
         </div>
     </nav>
-
     <div class="container">
-        {% with flashes = get_flashed_messages(with_categories=true) %}
-            {% if flashes %}
-                {% for category, message in flashes %}
-                    <div class="alert alert-{{ category }} bg-dark text-white text-center mb-4 rounded-pill">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <div class="chat-container">
-            <div class="row g-0 h-100">
-                <!-- الـ Sidebar الجانبي -->
-                <div class="col-md-4 users-sidebar d-flex flex-column">
-                    <!-- تبويبات التبديل بين شات خاص والمجموعات -->
-                    <div class="p-3 border-bottom border-secondary d-flex gap-2">
-                        <a href="{{ url_for('messages', tab='private') }}" class="btn tab-btn flex-grow-1 {{ 'btn-info text-dark' if active_tab == 'private' else 'btn-outline-light' }}">
-                            <i class="fa-solid fa-user me-1"></i>رسائل خاصة
-                        </a>
-                        <a href="{{ url_for('messages', tab='groups') }}" class="btn tab-btn flex-grow-1 {{ 'btn-info text-dark' if active_tab == 'groups' else 'btn-outline-light' }}">
-                            <i class="fa-solid fa-users me-1"></i>المجموعات
-                        </a>
-                    </div>
-
-                    <!-- قائمة العناصر النشطة -->
-                    <div class="flex-grow-1 overflow-auto">
-                        {% if active_tab == 'private' %}
-                            <div class="p-3 text-white-50 small">اختر مستخدماً لبدء محادثة خاصة وسرية:</div>
-                            {% for user in all_users %}
-                                <a href="{{ url_for('messages', tab='private', **{'with': user.username}) }}" class="user-item {{ 'active' if chatting_with == user.username else '' }}">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 40px; height: 40px;">
-                                            {{ user.username[0]|upper }}
-                                        </div>
-                                        <div>
-                                            <h6 class="mb-0 fw-bold">{{ user.username }}</h6>
-                                            <small class="text-white-50">محادثة مشفرة</small>
-                                        </div>
-                                    </div>
-                                </a>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="bg-dark p-3 rounded-4 border border-secondary mb-3">
+                    <h5 class="text-gold border-bottom border-secondary pb-2">رسالة جديدة</h5>
+                    <form action="{{ url_for('messages') }}" method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="chat_type" value="private">
+                        <select name="receiver" class="form-select bg-dark text-white border-secondary mb-2" required>
+                            <option value="">اختر مستخدم...</option>
+                            {% for u in all_users %}
+                                <option value="{{ u.username }}" {% if chatting_with == u.username %}selected{% endif %}>{{ u.username }}</option>
                             {% endfor %}
-                        {% else %}
-                            <!-- زر إنشاء مجموعة جديدة -->
-                            <div class="p-3">
-                                <button class="btn btn-outline-info w-100 rounded-pill" data-bs-toggle="modal" data-bs-target="#createGroupModal">
-                                    <i class="fa-solid fa-plus me-1"></i>إنشاء مجموعة جديدة
-                                </button>
-                            </div>
-                            {% for group in my_groups %}
-                                <a href="{{ url_for('messages', tab='groups', group_id=group.id) }}" class="user-item {{ 'active' if selected_group_id|string == group.id|string else '' }}">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="bg-info rounded-circle d-flex align-items-center justify-content-center text-dark fw-bold" style="width: 40px; height: 40px;">
-                                            <i class="fa-solid fa-hashtag"></i>
-                                        </div>
-                                        <div>
-                                            <h6 class="mb-0 fw-bold">{{ group.name }}</h6>
-                                            <small class="text-white-50">دردشة جماعية للمشتركين</small>
-                                        </div>
-                                    </div>
-                                </a>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
+                        </select>
+                        <textarea name="message" class="form-control bg-dark text-white border-secondary mb-2" placeholder="اكتب رسالتك هنا..." rows="2"></textarea>
+                        
+                        <div class="input-group mb-2">
+                            <span class="input-group-text bg-dark text-white border-secondary"><i class="fa-solid fa-microphone"></i></span>
+                            <input type="file" name="voice_file" accept="audio/*" class="form-control bg-dark text-white border-secondary" placeholder="مقطع صوتي">
+                        </div>
+                        <button type="submit" class="btn btn-outline-warning w-100 rounded-pill">إرسال</button>
+                    </form>
                 </div>
 
-                <!-- منطقة المحادثة الراقية -->
-                <div class="col-md-8 chat-area">
-                    {% if (active_tab == 'private' and chatting_with) or (active_tab == 'groups' and selected_group_id) %}
-                        <!-- ترويسة الشات النشط -->
-                        <div class="chat-header d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 45px; height: 45px;">
-                                    <i class="fa-solid {{ 'fa-user-lock' if active_tab == 'private' else 'fa-users' }}"></i>
-                                </div>
-                                <div>
-                                    <h5 class="mb-0 fw-bold">
-                                        {{ chatting_with if active_tab == 'private' else 'غرفة المجموعة النشطة' }}
-                                    </h5>
-                                    <small class="text-muted">محادثة مشفرة وآمنة تماماً</small>
-                                </div>
-                            </div>
-                        </div>
+                <div class="bg-dark p-3 rounded-4 border border-secondary">
+                    <h5 class="text-gold border-bottom border-secondary pb-2">إنشاء مجموعة</h5>
+                    <form action="{{ url_for('create_group') }}" method="POST">
+                        <input type="text" name="group_name" class="form-control bg-dark text-white border-secondary mb-2" placeholder="اسم المجموعة..." required>
+                        <button type="submit" class="btn btn-outline-light w-100 rounded-pill">إنشاء</button>
+                    </form>
+                </div>
+            </div>
 
-                        <!-- صندوق رسائل الشات النشط -->
-                        <div class="chat-messages" id="chatMessages">
-                            {% if active_tab == 'private' %}
-                                {% if private_messages %}
-                                    {% for msg in private_messages %}
-                                        <div class="message-row {{ 'sent' if msg.sender_id == current_user.id else 'received' }}">
-                                            <div class="message-bubble">
-                                                {{ msg.message_text }}
-                                            </div>
-                                            <small class="text-white-50 mt-1" style="font-size: 0.7rem;">
-                                                {{ 'أنت' if msg.sender_id == current_user.id else msg.sender.username }} | {{ msg.created_at.strftime('%H:%M') }}
-                                            </small>
-                                        </div>
-                                    {% endfor %}
-                                {% else %}
-                                    <div class="text-center py-5 text-muted">لا توجد رسائل سابقة. ابدأ المحادثة الآن!</div>
-                                {% endif %}
-                            {% else %}
-                                {% if group_messages %}
-                                    {% for msg in group_messages %}
-                                        <div class="message-row {{ 'sent' if msg.sender_id == current_user.id else 'received' }}">
-                                            <div class="message-bubble">
-                                                {{ msg.message_text }}
-                                            </div>
-                                            <small class="text-white-50 mt-1" style="font-size: 0.7rem;">
-                                                {{ 'أنت' if msg.sender_id == current_user.id else msg.sender.username }} | {{ msg.created_at.strftime('%H:%M') }}
-                                            </small>
-                                        </div>
-                                    {% endfor %}
-                                {% else %}
-                                    <div class="text-center py-5 text-muted">لا توجد رسائل في هذه المجموعة بعد. شارك برأيك الأول!</div>
-                                {% endif %}
-                            {% endif %}
-                        </div>
-
-                        <!-- مدخل إدخال الرسائل الذكي والموحد -->
-                        <div class="chat-input-area">
-                            <form action="{{ url_for('messages') }}" method="POST" class="d-flex align-items-center gap-2">
-                                <input type="hidden" name="chat_type" value="{{ active_tab }}">
-                                {% if active_tab == 'private' %}
-                                    <input type="hidden" name="receiver" value="{{ chatting_with }}">
-                                {% else %}
-                                    <input type="hidden" name="group_id" value="{{ selected_group_id }}">
-                                {% endif %}
-                                
-                                <input type="text" name="message" id="messageInput" class="form-control input-glass flex-grow-1" placeholder="اكتب رسالتك الراقية هنا..." required autocomplete="off">
-                                <button type="submit" class="btn btn-circle">
-                                    <i class="fa-solid fa-paper-plane text-info"></i>
-                                </button>
+            <div class="col-md-8">
+                <div class="chat-box mb-3 d-flex flex-column">
+                    {% if chatting_with %}
+                        <div class="text-center mb-4">
+                            <h5 class="text-gold">محادثة مع {{ chatting_with }}</h5>
+                            <form action="{{ url_for('clear_chat', username=chatting_with) }}" method="POST">
+                                <button type="submit" class="btn btn-sm btn-danger rounded-pill px-3">مسح المحادثة بالكامل</button>
                             </form>
                         </div>
+                        {% for msg in private_messages %}
+                            <div class="msg-bubble {% if msg.sender_id == current_user.id %}msg-sent{% else %}msg-received{% endif %}">
+                                {% if msg.message_text %}
+                                    {{ msg.message_text }}
+                                {% endif %}
+                                {% if msg.voice_file %}
+                                    <audio controls class="w-100 mt-2">
+                                        <source src="{{ url_for('static', filename='uploads/' + msg.voice_file) }}" type="audio/mpeg">
+                                    </audio>
+                                {% endif %}
+                                <div class="small mt-1 opacity-75" style="font-size: 0.75rem;">{{ msg.created_at.strftime('%H:%M') }}</div>
+                            </div>
+                        {% else %}
+                            <p class="text-muted text-center mt-auto mb-auto">لا توجد رسائل بينكما بعد.</p>
+                        {% endfor %}
                     {% else %}
-                        <!-- شاشة ترحيبية عند عدم تحديد أي شات -->
-                        <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
-                            <i class="fa-regular fa-comments fa-4x mb-3 text-info"></i>
-                            <h4>مرحباً بك في مركز تواصل "نجاحي هو نجاحك"</h4>
-                            <p class="small">الرجاء اختيار مستخدم أو مجموعة من القائمة الجانبية لبدء التواصل الآمن.</p>
+                        <div class="text-center text-muted mt-auto mb-auto">
+                            <i class="fa-solid fa-comments fs-1 mb-3"></i>
+                            <p>اختر مستخدم من القائمة لبدء المحادثة.</p>
                         </div>
                     {% endif %}
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- نافذة إنشاء الجروب السريعة (Modal) -->
-    <div class="modal fade" id="createGroupModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content bg-dark text-white border-secondary">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title fw-bold">إنشاء مجموعة جديدة</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <form action="{{ url_for('create_group') }}" method="POST">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label text-white-50">اسم المجموعة</label>
-                            <input type="text" name="group_name" class="form-control bg-black text-white border-secondary" placeholder="مثل: عشاق الخيل والسيبراني" required autocomplete="off">
-                        </div>
-                    </div>
-                    <div class="modal-footer border-secondary">
-                        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">إلغاء</button>
-                        <button type="submit" class="btn btn-info text-dark">إنشاء الآن</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        const chatMessages = document.getElementById('chatMessages');
-        if (chatMessages) {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-    </script>
 </body>
 </html>
