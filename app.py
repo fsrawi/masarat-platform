@@ -30,10 +30,10 @@ def load_user(user_id):
 
 with app.app_context():
     try:
-        # تفعيل المسح لمرة واحدة فقط لإنشاء أعمدة الصورة والنبذة الجديدة
-        db.drop_all() 
+        # تم إزالة db.drop_all() نهائياً لكي لا تُحذف حساباتك أبداً
         db.create_all() 
-        fawzi_admin = User.query.filter_by(username='fawzi').first()
+        # منح صلاحية الأدمن لحسابك (fawzi) بغض النظر عن حالة الأحرف
+        fawzi_admin = User.query.filter(User.username.ilike('fawzi')).first()
         if fawzi_admin:
             fawzi_admin.is_admin = True
             db.session.commit()
@@ -275,6 +275,28 @@ def block_user(user_id):
         db.session.add(Block(blocker_id=current_user.id, blocked_id=user_id))
         db.session.commit()
     return redirect(request.referrer or url_for('home'))
+
+# --- مسار لوحة التحكم للأدمن ---
+@app.route('/admin')
+@login_required
+def admin_panel():
+    if not current_user.is_admin:
+        abort(403)
+    users = User.query.all()
+    reports = Report.query.order_by(Report.created_at.desc()).all()
+    stories = Story.query.all()
+    return render_template('admin.html', users=users, reports=reports, stories=stories)
+
+@app.route('/admin/delete-user/<int:user_id>', methods=['POST'])
+@login_required
+def admin_delete_user(user_id):
+    if not current_user.is_admin:
+        abort(403)
+    user = User.query.get_or_404(user_id)
+    db.session.delete(user)
+    db.session.commit()
+    flash('تم حذف المستخدم بنجاح.', 'success')
+    return redirect(url_for('admin_panel'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))

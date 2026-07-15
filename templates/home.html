@@ -45,6 +45,11 @@
             <div class="d-flex gap-3 align-items-center">
                 <a href="{{ url_for('toggle_lang') }}" class="text-white-50 text-decoration-none">AR/EN</a>
                 {% if current_user.is_authenticated %}
+                    
+                    {% if current_user.is_admin %}
+                        <a href="{{ url_for('admin_panel') }}" class="btn btn-danger btn-sm rounded-pill px-3"><i class="fa-solid fa-user-shield me-1"></i>الأدمن</a>
+                    {% endif %}
+
                     <a href="{{ url_for('add_story') }}" class="btn btn-gold btn-sm rounded-pill px-3">{{ t['create_story'] }}</a>
                     <a href="{{ url_for('messages') }}" class="btn btn-outline-light btn-sm rounded-pill position-relative">
                         <i class="fa-solid fa-envelope"></i>
