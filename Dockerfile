@@ -1,20 +1,21 @@
 # استخدام نسخة Alpine المستقرة والآمنة جداً
 FROM python:3.10-alpine
 
-# تحديد مجلد العمل داخل الحاوية
+# تحديد مجلد العمل
 WORKDIR /app
 
 # نسخ ملف المتطلبات
 COPY requirements.txt .
 
-# تثبيت مكتبة Flask مباشرة
+# خطوة أمنية: ترقية الأدوات والمكتبات المصابة إلى نسخ آمنة وخالية من الثغرات
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel jaraco.context
+
+# تثبيت متطلبات مشروعك
 RUN pip install --no-cache-dir -r requirements.txt
 
-# نسخ بقية ملفات المشروع
+# نسخ بقية الملفات
 COPY . .
 
-# منفذ الاتصال
 EXPOSE 5000
 
-# أمر التشغيل
 CMD ["python", "app.py"]
