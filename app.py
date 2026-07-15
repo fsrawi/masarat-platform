@@ -30,10 +30,11 @@ def load_user(user_id):
 
 with app.app_context():
     try:
-        # هنا سنقوم بمسح القاعدة القديمة لمرة واحدة فقط لحل خطأ 500
-        db.drop_all() 
+        # تم قفل المسح للأبد لأن التحديث نجح، الآن لن تفقد أي حساب!
+        # db.drop_all() 
         db.create_all() 
         
+        # تفعيل صلاحية الأدمن لحسابك
         fawzi_admin = User.query.filter(User.username.ilike('fawzi')).first()
         if fawzi_admin:
             fawzi_admin.is_admin = True
@@ -74,9 +75,26 @@ def home():
     try: stories = Story.query.order_by(Story.created_at.desc()).all()
     except: stories = []
     
+    # تم إضافة كلمات التعليقات التي تسببت في انهيار الواجهة
     t = {
-        'ar': {'title': 'منصة نجاحي', 'brand': 'منصة نجاحي', 'create_story': 'أنشئ قصتك', 'messages': 'الرسائل', 'profile': 'ملفي', 'logout': 'خروج', 'login': 'دخول', 'register': 'حساب جديد', 'main_heading': 'مسارات وتجارب ملهمة', 'no_stories': 'لا توجد قصص بعد.', 'published_by': 'بواسطة:', 'challenge': 'التحدي', 'turning_point': 'التحول', 'outcome': 'النتيجة'},
-        'en': {'title': 'My Success', 'brand': 'My Success', 'create_story': 'Create Story', 'messages': 'Messages', 'profile': 'Profile', 'logout': 'Logout', 'login': 'Login', 'register': 'Register', 'main_heading': 'Inspiring Paths', 'no_stories': 'No stories yet.', 'published_by': 'By:', 'challenge': 'Challenge', 'turning_point': 'Turning Point', 'outcome': 'Outcome'}
+        'ar': {
+            'title': 'منصة نجاحي', 'brand': 'منصة نجاحي', 'create_story': 'أنشئ قصتك', 
+            'messages': 'الرسائل', 'profile': 'ملفي', 'logout': 'خروج', 'login': 'دخول', 
+            'register': 'حساب جديد', 'main_heading': 'مسارات وتجارب ملهمة', 
+            'no_stories': 'لا توجد قصص بعد.', 'published_by': 'بواسطة:', 
+            'challenge': 'التحدي', 'turning_point': 'التحول', 'outcome': 'النتيجة',
+            'comments': 'التعليقات', 'add_comment_placeholder': 'اكتب تعليقاً...', 
+            'comment_btn': 'إرسال', 'no_comments': 'لا توجد تعليقات'
+        },
+        'en': {
+            'title': 'My Success', 'brand': 'My Success', 'create_story': 'Create Story', 
+            'messages': 'Messages', 'profile': 'Profile', 'logout': 'Logout', 
+            'login': 'Login', 'register': 'Register', 'main_heading': 'Inspiring Paths', 
+            'no_stories': 'No stories yet.', 'published_by': 'By:', 
+            'challenge': 'Challenge', 'turning_point': 'Turning Point', 'outcome': 'Outcome',
+            'comments': 'Comments', 'add_comment_placeholder': 'Write a comment...', 
+            'comment_btn': 'Send', 'no_comments': 'No comments'
+        }
     }[session.get('lang', 'ar')]
     
     return render_template('home.html', stories=stories, show_welcome=not current_user.is_authenticated, t=t)
