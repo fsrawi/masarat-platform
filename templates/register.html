@@ -3,46 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل حساب جديد - منصة مسارات</title>
+    <title>الانضمام إلى نجاحي هو نجاحك</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #f8fafc; font-family: sans-serif; }
-        .register-container { max-width: 450px; margin: 80px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        body {
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            font-family: 'Tajawal', sans-serif;
+            min-height: 100vh;
+        }
+        .premium-card {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 40px;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="register-container">
-            <h3 class="text-center mb-4 text-primary">إنشاء حساب جديد</h3>
-            
-            <!-- عرض رسائل التنبيه أو الخطأ إن وجدت -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} text-center" role="alert">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="premium-card">
+                    <h2 class="fw-bold text-center text-info mb-4">إنشاء حساب أمني محمي</h2>
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} text-center rounded-pill">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
 
-            <form action="{{ url_for('register') }}" method="POST">
-                <div class="mb-3">
-                    <label for="username" class="form-label">اسم المستخدم</label>
-                    <input type="text" class="form-control" id="username" name="username" required autocomplete="off">
+                    <form action="{{ url_for('register') }}" method="POST">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">اسم المستخدم</label>
+                                <input type="text" name="username" class="form-control bg-dark text-white border-secondary" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">البريد الإلكتروني</label>
+                                <input type="email" name="email" class="form-control bg-dark text-white border-secondary" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">كلمة المرور</label>
+                                <input type="password" name="password" class="form-control bg-dark text-white border-secondary" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">رقم الهاتف</label>
+                                <input type="text" name="phone" class="form-control bg-dark text-white border-secondary" placeholder="+9627..." required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">تاريخ الميلاد</label>
+                                <input type="date" name="birth_date" class="form-control bg-dark text-white border-secondary" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">البلد</label>
+                                <input type="text" name="country" class="form-control bg-dark text-white border-secondary" placeholder="الأردن" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">المدينة</label>
+                                <input type="text" name="city" class="form-control bg-dark text-white border-secondary" placeholder="عمان" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">حالة النشاط الحالية</label>
+                                <select name="occupation_type" id="occupationSelect" class="form-select bg-dark text-white border-secondary" onchange="toggleOccupationDetails()">
+                                    <option value="student">أنا طالب جامعي</option>
+                                    <option value="employee">أنا موظف / رائد أعمال</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6" id="universityField">
+                                <label class="form-label">اسم الجامعة</label>
+                                <input type="text" name="university_name" class="form-control bg-dark text-white border-secondary" placeholder="مثال: جامعة الزيتونة الأردنية">
+                            </div>
+
+                            <div class="col-md-6 d-none" id="companyField">
+                                <label class="form-label">مكان العمل / الشركة</label>
+                                <input type="text" name="company_name" class="form-control bg-dark text-white border-secondary" placeholder="اسم الشركة أو المؤسسة">
+                            </div>
+
+                            <div class="col-12 mt-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="show_email" id="showEmail">
+                                    <label class="form-check-label" for="showEmail">إظهار بريدي الإلكتروني للآخرين بالمنصة</label>
+                                </div>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" name="show_phone" id="showPhone">
+                                    <label class="form-check-label" for="showPhone">إظهار رقم هاتفي للآخرين بالمنصة</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-info text-dark w-100 py-3 mt-4 rounded-pill fw-bold">إكمال التسجيل والانضمام</button>
+                    </form>
                 </div>
-                <div class="mb-3">
-                    <label for="email" class="form-label">البريد الإلكتروني</label>
-                    <input type="email" class="form-control" id="email" name="email" required autocomplete="off">
-                </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label">كلمة المرور</label>
-                    <input type="password" class="form-control" id="password" name="password" required>
-                </div>
-                <button type="submit" class="btn btn-primary w-100 mb-3">سجل الآن</button>
-            </form>
-            <div class="text-center">
-                <p class="mb-0">لديك حساب بالفعل؟ <a href="{{ url_for('login') }}">تسجيل الدخول</a></p>
             </div>
         </div>
     </div>
+
+    <script>
+        function toggleOccupationDetails() {
+            const select = document.getElementById('occupationSelect').value;
+            const uni = document.getElementById('universityField');
+            const comp = document.getElementById('companyField');
+            if (select === 'student') {
+                uni.classList.remove('d-none');
+                comp.classList.add('d-none');
+            } else {
+                uni.classList.add('d-none');
+                comp.classList.remove('d-none');
+            }
+        }
+    </script>
 </body>
 </html>
