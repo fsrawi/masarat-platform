@@ -1,107 +1,266 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ current_lang }}" dir="{{ 'rtl' if current_lang == 'ar' else 'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة مسارات - قصص ملهمة</title>
+    <title>{{ t['title'] }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        body { background-color: #f8fafc; font-family: sans-serif; }
-        .navbar { background-color: #1a365d; }
-        .navbar-brand, .nav-link { color: #fff !important; }
-        .story-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-right: 5px solid #2b6cb0; margin-bottom: 30px; padding: 25px; }
-        .comment-section { background-color: #f1f5f9; border-radius: 8px; padding: 15px; margin-top: 15px; }
-        .comment-box { border-bottom: 1px solid #e2e8f0; padding: 8px 0; }
-        .comment-box:last-child { border-bottom: none; }
+        :root {
+            --bg-color: #0f172a; /* لون الخلفية الداكن الفخم */
+            --card-bg: rgba(30, 41, 59, 0.7); /* بطاقات زجاجية شبه شفافة */
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-pink: #f43f5e;
+            --font-family: {% if current_lang == 'ar' %}'Tajawal', sans-serif{% else %}'Inter', sans-serif{% endif %};
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-family);
+            background-image: radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.05) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(244, 63, 94, 0.05) 0%, transparent 40%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        /* شريط التنقل الفخم */
+        .navbar {
+            background: rgba(15, 23, 42, 0.8) !important;
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* تصميم البطاقات الزجاجي (Glassmorphism) */
+        .story-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 35px;
+            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .story-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-blue);
+            box-shadow: 0 10px 25px -5px rgba(56, 189, 248, 0.15);
+        }
+
+        /* نقطة الإشعار الحمراء المضيئة والمتحركة */
+        .notification-dot {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 10px;
+            height: 10px;
+            background-color: var(--accent-pink);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-pink);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.8); opacity: 0.5; }
+        }
+
+        /* تصميم الأزرار والتفاعلات */
+        .btn-premium {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-premium:hover {
+            transform: scale(1.03);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+            color: white;
+        }
+
+        .btn-like {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            border-radius: 20px;
+            padding: 5px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-like:hover {
+            border-color: var(--accent-pink);
+            color: var(--accent-pink);
+        }
+
+        .btn-like.liked {
+            background: rgba(244, 63, 94, 0.1);
+            border-color: var(--accent-pink);
+            color: var(--accent-pink);
+        }
+
+        .comment-section {
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .comment-box {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 12px 0;
+        }
+
+        .comment-box:last-child {
+            border-bottom: none;
+        }
+
+        .badge-username {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent-blue);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
 
-    <!-- شريط التنقل العلوي (يتحقق من حالة تسجيل الدخول) -->
-    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top mb-5">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{{ url_for('home') }}">منصة مسارات</a>
-            <div class="navbar-nav ms-auto">
+            <a class="navbar-brand fw-bold fs-4 text-white" href="{{ url_for('home') }}">
+                <i class="fa-solid fa-compass text-info me-2"></i>{{ t['brand'] }}
+            </a>
+            
+            <div class="d-flex align-items-center ms-auto">
+                <a href="{{ url_for('toggle_lang') }}" class="btn btn-sm btn-outline-light px-3 me-3">
+                    <i class="fa-solid fa-globe me-1"></i>
+                    {{ 'English' if current_lang == 'ar' else 'العربية' }}
+                </a>
+
                 {% if current_user.is_authenticated %}
-                    <span class="nav-link text-warning me-3">مرحباً، {{ current_user.username }} 👋</span>
-                    <a class="nav-link btn btn-outline-light btn-sm px-3 me-2" href="{{ url_for('add_story') }}">أنشئ قصتك</a>
-                    <a class="nav-link btn btn-outline-info btn-sm px-3 me-2" href="{{ url_for('messages') }}">الرسائل الخاصة</a>
-                    <a class="nav-link btn btn-danger btn-sm px-3" href="{{ url_for('logout') }}">خروج</a>
+                    <span class="text-white me-3 d-none d-md-inline">{{ t['welcome'] }} <strong>{{ current_user.username }}</strong></span>
+                    <a class="btn btn-premium btn-sm px-3 me-2" href="{{ url_for('add_story') }}">
+                        <i class="fa-solid fa-pen-nib me-1"></i>{{ t['create_story'] }}
+                    </a>
+                    
+                    <a class="btn btn-outline-info btn-sm px-3 me-2 position-relative" href="{{ url_for('messages') }}">
+                        <i class="fa-solid fa-envelope me-1"></i>{{ t['messages'] }}
+                        {% if has_unread_messages %}
+                            <span class="notification-dot"></span>
+                        {% endif %}
+                    </a>
+                    
+                    <a class="btn btn-danger btn-sm px-3" href="{{ url_for('logout') }}"><i class="fa-solid fa-arrow-right-from-bracket me-1"></i>{{ t['logout'] }}</a>
                 {% else %}
-                    <a class="nav-link btn btn-primary btn-sm px-3 me-2" href="{{ url_for('login') }}">تسجيل الدخول</a>
-                    <a class="nav-link btn btn-outline-light btn-sm px-3" href="{{ url_for('register') }}">إنشاء حساب</a>
+                    <a class="btn btn-outline-light btn-sm px-3 me-2" href="{{ url_for('login') }}">{{ t['login'] }}</a>
+                    <a class="btn btn-premium btn-sm px-3" href="{{ url_for('register') }}">{{ t['register'] }}</a>
                 {% endif %}
             </div>
         </div>
     </nav>
 
     <div class="container">
-        <!-- عرض التنبيهات -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} text-center" role="alert">{{ message }}</div>
+                    <div class="alert alert-{{ category }} bg-dark text-white border-secondary text-center mb-4" role="alert">
+                        {{ message }}
+                    </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
 
-        <h1 class="text-center my-4 text-primary fw-bold">قصص ملهمة في مواجهة التحديات</h1>
+        <h1 class="text-center my-5 fw-bold text-white">{{ t['main_heading'] }}</h1>
 
         <div class="row justify-content-center">
-            <div class="col-md-9">
-                <!-- التحقق من وجود قصص لعرضها -->
+            <div class="col-lg-9 col-md-11">
                 {% if stories %}
                     {% for story in stories %}
                         <div class="story-card">
-                            <h3 class="text-primary fw-bold mb-3">{{ story.title }}</h3>
-                            <p class="text-muted small">نُشرت بواسطة: <strong>{{ story.author.username }}</strong> في {{ story.created_at.strftime('%Y-%m-%d') }}</p>
-                            <hr>
+                            <h2 class="fw-bold text-white mb-2">{{ story.title }}</h2>
+                            <p class="text-muted small">
+                                <i class="fa-regular fa-user me-1"></i>{{ t['published_by'] }} <span class="badge-username">{{ story.author.username }}</span>
+                                <span class="mx-2">|</span>
+                                <i class="fa-regular fa-calendar me-1"></i>{{ story.created_at.strftime('%Y-%m-%d') }}
+                            </p>
+                            <hr class="border-secondary my-4">
                             
-                            <div class="mb-3">
-                                <strong class="text-danger">مرحلة الصعوبة والتحدي:</strong>
-                                <p class="mt-1">{{ story.challenge }}</p>
+                            <div class="mb-4">
+                                <h5 class="text-info fw-bold mb-2"><i class="fa-solid fa-bolt me-2"></i>{{ t['challenge'] }}</h5>
+                                <p style="line-height: 1.8;">{{ story.challenge }}</p>
                             </div>
 
-                            <div class="mb-3">
-                                <strong class="text-success">نقطة التحول والنجاح:</strong>
-                                <p class="mt-1">{{ story.turning_point }}</p>
+                            <div class="mb-4">
+                                <h5 class="text-success fw-bold mb-2"><i class="fa-solid fa-map-pin me-2"></i>{{ t['turning_point'] }}</h5>
+                                <p style="line-height: 1.8;">{{ story.turning_point }}</p>
                             </div>
 
-                            <div class="mb-3">
-                                <strong class="text-dark">النتيجة الحالية والدروس:</strong>
-                                <p class="mt-1">{{ story.outcome }}</p>
+                            <div class="mb-4">
+                                <h5 class="text-warning fw-bold mb-2"><i class="fa-solid fa-trophy me-2"></i>{{ t['outcome'] }}</h5>
+                                <p style="line-height: 1.8;">{{ story.outcome }}</p>
                             </div>
 
-                            <!-- قسم التعليقات -->
+                            <div class="d-flex align-items-center gap-3 mt-4">
+                                {% if current_user.is_authenticated %}
+                                    {% set user_liked = false %}
+                                    {% for like in story.likes %}
+                                        {% if like.user_id == current_user.id %}
+                                            {% set user_liked = true %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    <form action="{{ url_for('like_story', story_id=story.id) }}" method="POST" class="d-inline">
+                                        <button type="submit" class="btn btn-like {{ 'liked' if user_liked else '' }}">
+                                            <i class="fa-{{ 'solid' if user_liked else 'regular' }} fa-heart me-1"></i>
+                                            {{ story.likes|length }}
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-muted small"><i class="fa-regular fa-heart me-1"></i>{{ story.likes|length }} {{ 'إعجاب' if current_lang == 'ar' else 'Likes' }}</span>
+                                {% endif %}
+                            </div>
+
                             <div class="comment-section">
-                                <h5 class="fw-bold mb-3">التعليقات ({{ story.comments|length }})</h5>
+                                <h6 class="fw-bold text-white mb-3"><i class="fa-regular fa-comments me-2"></i>{{ t['comments'] }} ({{ story.comments|length }})</h6>
                                 
                                 {% if story.comments %}
                                     {% for comment in story.comments %}
                                         <div class="comment-box">
-                                            <strong>{{ comment.author.username }}:</strong>
-                                            <span class="text-dark">{{ comment.content }}</span>
-                                            <span class="text-muted float-start" style="font-size: 0.8rem;">{{ comment.created_at.strftime('%m-%d %H:%M') }}</span>
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <strong class="text-info">{{ comment.author.username }}</strong>
+                                                <span class="text-muted" style="font-size: 0.75rem;">{{ comment.created_at.strftime('%m-%d %H:%M') }}</span>
+                                            </div>
+                                            <p class="mb-0 text-white-50 small">{{ comment.content }}</p>
                                         </div>
                                     {% endfor %}
                                 {% else %}
-                                    <p class="text-muted small mb-0">لا توجد تعليقات بعد. كن أول من يعلق!</p>
+                                    <p class="text-muted small mb-0">{{ t['no_comments'] }}</p>
                                 {% endif %}
 
-                                <!-- نموذج إضافة تعليق للمستخدمين المسجلين فقط -->
                                 {% if current_user.is_authenticated %}
-                                    <form action="{{ url_for('add_comment', story_id=story.id) }}" method="POST" class="mt-3 d-flex">
-                                        <input type="text" name="content" class="form-control me-2" placeholder="اكتب تعليقاً مشجعاً..." required autocomplete="off">
-                                        <button type="submit" class="btn btn-primary btn-sm px-3">تعليق</button>
+                                    <form action="{{ url_for('add_comment', story_id=story.id) }}" method="POST" class="mt-3 d-flex gap-2">
+                                        <input type="text" name="content" class="form-control bg-dark text-white border-secondary" placeholder="{{ t['add_comment_placeholder'] }}" required autocomplete="off">
+                                        <button type="submit" class="btn btn-premium btn-sm px-4">{{ t['comment_btn'] }}</button>
                                     </form>
                                 {% else %}
-                                    <p class="text-center mt-3 mb-0 small"><a href="{{ url_for('login') }}">سجل دخولك</a> لتستطيع ترك تعليق أو التفاعل مع القصة.</p>
+                                    <p class="text-center mt-3 mb-0 small text-muted">{{ t['login_to_comment'] }}</p>
                                 {% endif %}
                             </div>
                         </div>
                     {% endfor %}
                 {% else %}
-                    <div class="alert alert-info text-center">لا توجد قصص منشورة بعد، كن أول من ينشر قصة نجاحه!</div>
+                    <div class="alert alert-info bg-dark text-info border-info text-center py-5">{{ t['no_stories'] }}</div>
                 {% endif %}
             </div>
         </div>

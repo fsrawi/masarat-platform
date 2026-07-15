@@ -38,6 +38,7 @@ class Story(db.Model):
     turning_point = db.Column(db.Text, nullable=False)
     outcome = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    likes = db.relationship('Like', backref='story', lazy=True, cascade="all, delete-orphan")
     
     comments = db.relationship('Comment', backref='story', lazy=True, cascade="all, delete-orphan")
 
@@ -65,3 +66,15 @@ class DirectMessage(db.Model):
     # تعريف العلاقات البرمجية للمرسل والمستقبل
     sender = db.relationship('User', foreign_keys=[sender_id], backref=db.backref('sent_messages', lazy=True))
     receiver = db.relationship('User', foreign_keys=[receiver_id], backref=db.backref('received_messages', lazy=True))
+
+    # 5. جدول الإعجابات (Likes) لمنع تكرار الإعجاب من نفس المستخدم
+class Like(db.Model):
+    __tablename__ = 'likes'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    story_id = db.Column(db.Integer, db.ForeignKey('stories.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # لضمان عدم تكرار الإعجاب
+    __table_args__ = (db.UniqueConstraint('user_id', 'story_id', name='unique_user_story_like'),)
