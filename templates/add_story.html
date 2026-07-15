@@ -1,50 +1,137 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ current_lang }}" dir="{{ 'rtl' if current_lang == 'ar' else 'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أنشئ قصتك الملهمة - منصة مسارات</title>
+    <title>منصة نجاحي هو نجاحك - شارك نجاحك</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        body { background-color: #f8fafc; font-family: sans-serif; }
-        .navbar { background-color: #1a365d; }
-        .navbar-brand, .nav-link { color: #fff !important; }
-        .form-container { max-width: 700px; margin: 50px auto; background: white; padding: 35px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        :root {
+            --bg-color: #0b0f19;
+            --glass-bg: rgba(17, 24, 39, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent-glow: #38bdf8;
+            --accent-gradient: linear-gradient(135deg, #38bdf8 0%, #0369a1 100%);
+            --font-family: {% if current_lang == 'ar' %}'Tajawal', sans-serif{% else %}'Inter', sans-serif{% endif %};
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-family);
+            background-image: radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(244, 63, 94, 0.05) 0%, transparent 40%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: rgba(11, 15, 25, 0.8) !important;
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .premium-form-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+        }
+
+        .input-glass {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            color: white;
+            border-radius: 12px;
+            padding: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .input-glass:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-glow);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+            color: white;
+        }
+
+        .btn-premium {
+            background: var(--accent-gradient);
+            color: white;
+            font-weight: bold;
+            padding: 12px 30px;
+            border-radius: 50px;
+            border: none;
+            transition: all 0.3s;
+        }
+
+        .btn-premium:hover {
+            transform: scale(1.03);
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.4);
+            color: white;
+        }
     </style>
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top mb-5">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{{ url_for('home') }}">منصة مسارات</a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link btn btn-outline-light btn-sm px-3" href="{{ url_for('home') }}">العودة للرئيسية</a>
+            <a class="navbar-brand fw-bold fs-4 text-white" href="{{ url_for('home') }}">
+                <i class="fa-solid fa-compass text-info me-2"></i>منصة نجاحي هو نجاحك
+            </a>
+            <div class="ms-auto">
+                <a class="btn btn-outline-light btn-sm px-4 rounded-pill" href="{{ url_for('home') }}">
+                    <i class="fa-solid fa-house me-1"></i>الرئيسية
+                </a>
             </div>
         </div>
     </nav>
 
-    <div class="container">
-        <div class="form-container">
-            <h2 class="text-primary fw-bold text-center mb-4">شارك قصة تحديك ونجاحك</h2>
-            <form action="{{ url_for('add_story') }}" method="POST">
-                <div class="mb-3">
-                    <label for="title" class="form-label fw-bold">عنوان قصتك الملهمة</label>
-                    <input type="text" class="form-control" id="title" name="title" placeholder="مثال: رحلتي في انتزاع الاستقلال التقني" required autocomplete="off">
+    <div class="container pb-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+                <div class="premium-form-card">
+                    <h2 class="fw-bold mb-2 text-white">
+                        <i class="fa-solid fa-feather-pointed text-info me-2"></i>
+                        شاركنا مسار نجاحك المُلهم
+                    </h2>
+                    <p class="text-white-50 mb-5">مرحلة واحدة من القوة، الكفاح والتجاوز قد تفتح آفاقاً جديدة وتلهم شخصاً يحتاج لنجاحك ليحقق نجاحه.</p>
+                    
+                    <form action="{{ url_for('add_story') }}" method="POST">
+                        <div class="mb-4">
+                            <label class="form-label text-white fw-bold">عنوان قصتك الملهمة</label>
+                            <input type="text" name="title" class="form-control input-glass" placeholder="مثال: رحلتي من دراسة الدبلوم إلى الحرية السيبرانية التامة" required autocomplete="off">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label text-white fw-bold">1. مرحلة الصعوبة والتحدي</label>
+                            <textarea name="challenge" rows="4" class="form-control input-glass" placeholder="ما هي التحديات والصعوبات التي واجهتها بقوة وتحديتها؟" required></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label text-white fw-bold">2. نقطة التحول والنهوض</label>
+                            <textarea name="turning_point" rows="4" class="form-control input-glass" placeholder="ما هو القرار الشجاع أو الحدث الذي غيّر مجرى الأمور لصالحك؟" required></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label text-white fw-bold">3. الدروس والنتيجة الحالية</label>
+                            <textarea name="outcome" rows="4" class="form-control input-glass" placeholder="أين أنت الآن؟ وما هي النصيحة الذهبية التي توجهها للباحثين عن النجاح؟" required></textarea>
+                        </div>
+
+                        <div class="text-end pt-3">
+                            <button type="submit" class="btn btn-premium px-5">
+                                <i class="fa-solid fa-paper-plane me-1"></i>نشر ومشاركة القصة
+                            </button>
+                        </div>
+                    </form>
                 </div>
-                <div class="mb-3">
-                    <label for="challenge" class="form-label fw-bold">مرحلة الصعوبة والتحدي</label>
-                    <textarea class="form-control" id="challenge" name="challenge" rows="4" placeholder="صف الصعوبات والقيود التي واجهتك في بدايتك..." required></textarea>
-                </div>
-                <div class="mb-3">
-                    <label for="turning_point" class="form-label fw-bold">نقطة التحول والنجاح</label>
-                    <textarea class="form-control" id="turning_point" name="turning_point" rows="4" placeholder="ما القرار أو الحدث الذي غير مسارك تماماً؟" required></textarea>
-                </div>
-                <div class="mb-3">
-                    <label for="outcome" class="form-label fw-bold">النتيجة الحالية والدروس المستفادة</label>
-                    <textarea class="form-control" id="outcome" name="outcome" rows="4" placeholder="أين أنت اليوم وما هي نصيحتك للآخرين؟" required></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary w-100 py-2">انشر قصتك الآن 🚀</button>
-            </form>
+            </div>
         </div>
     </div>
 

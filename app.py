@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template, redirect, url_for, request, flash, session
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from models import db, User, Story, Comment, DirectMessage, Like
+from models import db, User, Story, Comment, DirectMessage, Like, Group, GroupMessage
 from sqlalchemy import or_
 
 app = Flask(__name__)
@@ -9,11 +9,13 @@ app = Flask(__name__)
 # إعدادات الحماية والـ Session
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Fawzi_Secure_DevSecOps_Key_2026')
 
-# --- الاتصال الذكي بقاعدة البيانات لضمان الحفظ الدائم للأبد ---
-# يقرأ الرابط من البيئة السحابية (PostgreSQL)، وإذا لم يجده يستعين بـ SQLite محلياً
-database_url = os.environ.get('DATABASE_URL', 'sqlite:///masarat.db')
-if database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql://", 1)
+# الاتصال الذكي بقاعدة البيانات
+database_url = os.environ.get('DATABASE_URL')
+if not database_url:
+    database_url = 'sqlite:///masarat.db'
+else:
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -31,36 +33,27 @@ def load_user(user_id):
 with app.app_context():
     db.create_all()
 
-# حقن متغيرات إضافية في جميع الواجهات تلقائياً (مثل وجود رسائل غير مقروءة واللغة الحالية)
 @app.context_processor
 def inject_global_vars():
     has_unread = False
     if current_user.is_authenticated:
-        # فحص إذا كان هناك أي رسالة موجهة للمستخدم الحالي لم تُقرأ بعد
         unread_count = DirectMessage.query.filter_by(receiver_id=current_user.id, is_read=False).count()
         has_unread = unread_count > 0
-    
-    # تحديد لغة الموقع الافتراضية (عربي 'ar' إن لم تكن محددة في الجلسة)
     current_lang = session.get('lang', 'ar')
     return dict(has_unread_messages=has_unread, current_lang=current_lang)
 
-
-# --- مسار تبديل اللغة (AR/EN Toggle) ---
 @app.route('/toggle-lang')
 def toggle_lang():
-    # تبديل اللغة المخزنة في الـ Session للجهاز الحالي
     old_lang = session.get('lang', 'ar')
     session['lang'] = 'en' if old_lang == 'ar' else 'ar'
     return redirect(request.referrer or url_for('home'))
 
-
-# --- 1. المسار الرئيسي (عرض القصص والتعليقات ديناميكياً بالهوية الجديدة) ---
+# --- 1. المسار الرئيسي (عرض القصص) ---
 @app.route('/')
 def home():
     stories = Story.query.order_by(Story.created_at.desc()).all()
     lang = session.get('lang', 'ar')
     
-    # مصفوفة الترجمة بالاسم الجديد الفخم "منصة نجاحي هو نجاحك"
     translations = {
         'ar': {
             'title': 'منصة نجاحي هو نجاحك - قصص ملهمة',
@@ -109,13 +102,11 @@ def home():
     t = translations[lang]
     return render_template('home.html', stories=stories, t=t)
 
-
-# --- 2. مسارات تسجيل الدخول والحسابات (Authentication) ---
+# --- 2. مسارات التسجيل والدخول ---
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
-        
     if request.method == 'POST':
         username = request.form.get('username').strip()
         email = request.form.get('email').strip()
@@ -127,32 +118,26 @@ def register():
             
         new_user = User(username=username, email=email)
         new_user.set_password(password)
-        
         db.session.add(new_user)
         db.session.commit()
-        
         flash('تم إنشاء حسابك بنجاح! يمكنك تسجيل الدخول الآن.', 'success')
         return redirect(url_for('login'))
-        
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
-        
     if request.method == 'POST':
         username = request.form.get('username').strip()
         password = request.form.get('password')
-        
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
-            login_user(user)
+            login_user(user, remember=True) # تفعيل الحفظ الدائم لجلسة المستخدم
             flash('تم تسجيل الدخول بنجاح!', 'success')
             return redirect(url_for('home'))
         else:
             flash('اسم المستخدم أو كلمة المرور غير صحيحة!', 'danger')
-            
     return render_template('login.html')
 
 @app.route('/logout')
@@ -161,7 +146,6 @@ def logout():
     logout_user()
     flash('تم تسجيل الخروج بنجاح.', 'info')
     return redirect(url_for('home'))
-
 
 # --- 3. مسار كتابة قصة جديدة ---
 @app.route('/add-story', methods=['GET', 'POST'])
@@ -182,88 +166,120 @@ def add_story():
         )
         db.session.add(new_story)
         db.session.commit()
-        
-        flash('تم نشر قصتك بنجاح ومشاركتها مع مجتمع مسارات!', 'success')
+        flash('تم نشر قصتك بنجاح ومشاركتها مع مجتمع نجاحي هو نجاحك!', 'success')
         return redirect(url_for('home'))
-        
     return render_template('add_story.html')
 
-
-# --- 4. مسار إضافة التعليقات ---
+# --- 4. التعليقات والإعجابات ---
 @app.route('/story/<int:story_id>/comment', methods=['POST'])
 @login_required
 def add_comment(story_id):
     content = request.form.get('content').strip()
     if content:
-        new_comment = Comment(
-            story_id=story_id,
-            user_id=current_user.id,
-            content=content
-        )
+        new_comment = Comment(story_id=story_id, user_id=current_user.id, content=content)
         db.session.add(new_comment)
         db.session.commit()
-        flash('تمت إضافة تعليقك بنجاح!', 'success')
     return redirect(url_for('home'))
 
-
-# --- 5. مسار التفاعل بالإعجاب (Like Toggle) ---
 @app.route('/story/<int:story_id>/like', methods=['POST'])
 @login_required
 def like_story(story_id):
     existing_like = Like.query.filter_by(user_id=current_user.id, story_id=story_id).first()
-    
     if existing_like:
         db.session.delete(existing_like)
-        db.session.commit()
     else:
         new_like = Like(user_id=current_user.id, story_id=story_id)
         db.session.add(new_like)
-        db.session.commit()
-        
+    db.session.commit()
     return redirect(url_for('home'))
 
-
-# --- 6. مسارات الرسائل الخاصة ---
+# --- 5. نظام المراسلات المتقدم (شات خاص + جروبات) ---
 @app.route('/messages', methods=['GET', 'POST'])
 @login_required
 def messages():
+    active_tab = request.args.get('tab', 'private')  # 'private' or 'groups'
+    chatting_with_username = request.args.get('with', '')  # اسم المستخدم للشات الخاص
+    selected_group_id = request.args.get('group_id', '') # رقم الجروب النشط حالياً
+
+    all_users = User.query.filter(User.id != current_user.id).all()
+    my_groups = Group.query.all() # جلب كافة المجموعات النشطة في المنصة
+
+    private_messages = []
+    group_messages = []
+
+    # معالجة إرسال الرسائل (POST)
     if request.method == 'POST':
-        receiver_username = request.form.get('receiver').strip()
-        message_text = request.form.get('message').strip()
+        chat_type = request.form.get('chat_type')
         
-        receiver = User.query.filter_by(username=receiver_username).first()
-        if not receiver:
-            flash('هذا المستخدم غير موجود بالمنصة!', 'danger')
-        elif receiver.id == current_user.id:
-            flash('لا يمكنك إرسال رسالة لنفسك!', 'warning')
-        elif message_text:
-            new_message = DirectMessage(
-                sender_id=current_user.id,
-                receiver_id=receiver.id,
-                message_text=message_text
-            )
-            db.session.add(new_message)
-            db.session.commit()
-            flash('تم إرسال الرسالة بنجاح!', 'success')
+        if chat_type == 'private':
+            receiver_username = request.form.get('receiver').strip()
+            message_text = request.form.get('message').strip()
+            receiver = User.query.filter_by(username=receiver_username).first()
             
-        return redirect(url_for('messages'))
+            if not receiver:
+                flash('هذا المستخدم غير موجود بالمنصة!', 'danger')
+            elif message_text:
+                new_message = DirectMessage(
+                    sender_id=current_user.id,
+                    receiver_id=receiver.id,
+                    message_text=message_text
+                )
+                db.session.add(new_message)
+                db.session.commit()
+                return redirect(url_for('messages', tab='private', **{'with': receiver_username}))
 
-    all_messages = DirectMessage.query.filter(
-        or_(
-            DirectMessage.sender_id == current_user.id,
-            DirectMessage.receiver_id == current_user.id
-        )
-    ).order_by(DirectMessage.created_at.asc()).all()
-    
-    unread_messages = DirectMessage.query.filter_by(receiver_id=current_user.id, is_read=False).all()
-    for msg in unread_messages:
-        msg.is_read = True
-    db.session.commit()
-    
-    return render_template('messages.html', messages=all_messages)
+        elif chat_type == 'group':
+            group_id = request.form.get('group_id')
+            message_text = request.form.get('message').strip()
+            group = Group.query.get(group_id)
+            
+            if group and message_text:
+                new_gmsg = GroupMessage(
+                    group_id=group.id,
+                    sender_id=current_user.id,
+                    message_text=message_text
+                )
+                db.session.add(new_gmsg)
+                db.session.commit()
+                return redirect(url_for('messages', tab='groups', group_id=group_id))
 
+    # جلب أرشيف الرسائل الخاصة بين الطرفين بدقة لتفادي الخلط
+    if chatting_with_username:
+        other_user = User.query.filter_by(username=chatting_with_username).first()
+        if other_user:
+            private_messages = DirectMessage.query.filter(
+                or_(
+                    (DirectMessage.sender_id == current_user.id) & (DirectMessage.receiver_id == other_user.id),
+                    (DirectMessage.sender_id == other_user.id) & (DirectMessage.receiver_id == current_user.id)
+                )
+            ).order_by(DirectMessage.created_at.asc()).all()
 
-# --- التشغيل البرمجي وتحديد المنفذ (Port Binding) ديناميكياً لـ Render ---
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port)
+    # جلب رسائل المجموعة النشطة
+    if selected_group_id:
+        group_messages = GroupMessage.query.filter_by(group_id=selected_group_id).order_by(GroupMessage.created_at.asc()).all()
+
+    return render_template('messages.html', 
+                           all_users=all_users, 
+                           my_groups=my_groups,
+                           private_messages=private_messages,
+                           group_messages=group_messages,
+                           active_tab=active_tab,
+                           chatting_with=chatting_with_username,
+                           selected_group_id=selected_group_id)
+
+# مسار إنشاء مجموعة جديدة
+@app.route('/create-group', methods=['POST'])
+@login_required
+def create_group():
+    group_name = request.form.get('group_name').strip()
+    if group_name:
+        existing = Group.query.filter_by(name=group_name).first()
+        if existing:
+            flash('اسم المجموعة مستخدم بالفعل!', 'warning')
+        else:
+            new_group = Group(name=group_name, created_by=current_user.id)
+            new_group.members.append(current_user)
+            db.session.add(new_group)
+            db.session.commit()
+            flash(f'تم إنشاء مجموعة "{group_name}" بنجاح!', 'success')
+    return redirect(url_for('messages', tab='groups'))

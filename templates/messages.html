@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نجاحي هو نجاحك - مركز التواصل</title>
+    <title>نجاحي هو نجاحك - غرف التواصل</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -31,26 +31,23 @@
             overflow-x: hidden;
         }
 
-        /* شريط علوي فخم للغاية */
         .navbar {
             background: rgba(11, 15, 25, 0.8) !important;
             backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--glass-border);
         }
 
-        /* حاوية الشات الرئيسية */
         .chat-container {
             background: var(--glass-bg);
             backdrop-filter: blur(24px);
             border: 1px solid var(--glass-border);
             border-radius: 24px;
-            height: calc(100vh - 150px);
-            min-height: 550px;
+            height: calc(100vh - 160px);
+            min-height: 580px;
             overflow: hidden;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
         }
 
-        /* القائمة الجانبية للمستخدمين */
         .users-sidebar {
             border-right: 1px solid var(--glass-border);
             background: rgba(15, 23, 42, 0.4);
@@ -58,19 +55,6 @@
             overflow-y: auto;
         }
 
-        .user-item {
-            padding: 15px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .user-item:hover, .user-item.active {
-            background: rgba(56, 189, 248, 0.08);
-            border-left: 3px solid var(--accent-glow);
-        }
-
-        /* منطقة المحادثة */
         .chat-area {
             display: flex;
             flex-direction: column;
@@ -90,7 +74,6 @@
             background: rgba(10, 15, 26, 0.2);
         }
 
-        /* فقاعات الشات الراقية */
         .message-row {
             margin-bottom: 20px;
             display: flex;
@@ -127,7 +110,6 @@
             border-bottom-left-radius: 4px;
         }
 
-        /* مدخل الرسائل الفخم */
         .chat-input-area {
             padding: 20px 25px;
             border-top: 1px solid var(--glass-border);
@@ -150,7 +132,6 @@
             color: white;
         }
 
-        /* أزرار التفاعل الدائرية الفخمة */
         .btn-circle {
             width: 46px;
             height: 46px;
@@ -162,69 +143,34 @@
             color: var(--text-main);
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--glass-border);
+            cursor: pointer;
         }
 
         .btn-circle:hover {
             transform: scale(1.08);
             background: var(--accent-gradient);
             color: white;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
         }
 
-        .btn-call {
-            background: rgba(16, 185, 129, 0.1);
-            border-color: rgba(16, 185, 129, 0.2);
-            color: #10b981;
-        }
-
-        .btn-call:hover {
-            background: #10b981;
-            color: white;
-            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
-        }
-
-        /* واجهة محاكاة الاتصال الراقية */
-        .call-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(11, 15, 25, 0.95);
-            z-index: 1000;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-
-        .caller-avatar {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: var(--accent-gradient);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            margin-bottom: 20px;
-            box-shadow: 0 0 30px var(--accent-glow);
-            animation: pulse-avatar 2s infinite;
-        }
-
-        @keyframes pulse-avatar {
-            0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
-            70% { box-shadow: 0 0 0 20px rgba(56, 189, 248, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
-        }
-
-        /* مشغل الصوت الفخم للرسائل الصوتية */
-        .voice-player {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 8px 16px;
+        .tab-btn {
             border-radius: 30px;
-            margin-top: 5px;
+            padding: 8px 20px;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .user-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: block;
+            color: var(--text-main);
+        }
+
+        .user-item:hover, .user-item.active {
+            background: rgba(56, 189, 248, 0.08);
         }
     </style>
 </head>
@@ -244,163 +190,182 @@
     </nav>
 
     <div class="container">
-        <div class="chat-container position-relative">
-            
-            <div class="call-overlay" id="callOverlay">
-                <div class="caller-avatar">
-                    <i class="fa-solid fa-user"></i>
-                </div>
-                <h3 class="fw-bold mb-1" id="callTargetName">صديق نجاحك</h3>
-                <p class="text-success mb-5" id="callStatus">جاري الاتصال الصوتي الآمن...</p>
-                <button class="btn btn-danger btn-lg rounded-circle" onclick="endCall()" style="width: 60px; height: 60px;">
-                    <i class="fa-solid fa-phone-slash"></i>
-                </button>
-            </div>
+        {% with flashes = get_flashed_messages(with_categories=true) %}
+            {% if flashes %}
+                {% for category, message in flashes %}
+                    <div class="alert alert-{{ category }} bg-dark text-white text-center mb-4 rounded-pill">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
+        <div class="chat-container">
             <div class="row g-0 h-100">
-                <div class="col-md-3 users-sidebar d-none d-md-block">
-                    <div class="p-4 border-bottom border-secondary">
-                        <h5 class="fw-bold mb-0 text-info">الأعضاء النشطون</h5>
-                    </div>
-                    <div class="user-item active">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="bg-info rounded-circle d-flex align-items-center justify-content-center text-dark fw-bold" style="width: 40px; height: 40px;">ن</div>
-                            <div>
-                                <h6 class="mb-0 fw-bold">نخبة المبدعين</h6>
-                                <small class="text-success">متصل الآن</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-9 chat-area">
-                    <div class="chat-header d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 45px; height: 45px;">
-                                <i class="fa-solid fa-comments"></i>
-                            </div>
-                            <div>
-                                <h5 class="mb-0 fw-bold" id="chattingWith">المجتمع التفاعلي</h5>
-                                <small class="text-muted">مشفر ومحمي بالكامل</small>
-                            </div>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-circle btn-call" onclick="startCall()" title="اتصال صوتي">
-                                <i class="fa-solid fa-phone"></i>
-                            </button>
-                            <button class="btn btn-circle" title="مكالمة فيديو">
-                                <i class="fa-solid fa-video"></i>
-                            </button>
-                        </div>
+                <!-- الـ Sidebar الجانبي -->
+                <div class="col-md-4 users-sidebar d-flex flex-column">
+                    <!-- تبويبات التبديل بين شات خاص والمجموعات -->
+                    <div class="p-3 border-bottom border-secondary d-flex gap-2">
+                        <a href="{{ url_for('messages', tab='private') }}" class="btn tab-btn flex-grow-1 {{ 'btn-info text-dark' if active_tab == 'private' else 'btn-outline-light' }}">
+                            <i class="fa-solid fa-user me-1"></i>رسائل خاصة
+                        </a>
+                        <a href="{{ url_for('messages', tab='groups') }}" class="btn tab-btn flex-grow-1 {{ 'btn-info text-dark' if active_tab == 'groups' else 'btn-outline-light' }}">
+                            <i class="fa-solid fa-users me-1"></i>المجموعات
+                        </a>
                     </div>
 
-                    <div class="chat-messages" id="chatMessages">
-                        {% if messages %}
-                            {% for msg in messages %}
-                                {% if msg.sender_id == current_user.id %}
-                                    <div class="message-row sent">
-                                        <div class="message-bubble">
-                                            {{ msg.message_text }}
+                    <!-- قائمة العناصر النشطة -->
+                    <div class="flex-grow-1 overflow-auto">
+                        {% if active_tab == 'private' %}
+                            <div class="p-3 text-white-50 small">اختر مستخدماً لبدء محادثة خاصة وسرية:</div>
+                            {% for user in all_users %}
+                                <a href="{{ url_for('messages', tab='private', **{'with': user.username}) }}" class="user-item {{ 'active' if chatting_with == user.username else '' }}">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 40px; height: 40px;">
+                                            {{ user.username[0]|upper }}
                                         </div>
-                                        <small class="text-white-50 mt-1" style="font-size: 0.7rem;">أنت | {{ msg.created_at.strftime('%H:%M') }}</small>
-                                    </div>
-                                {% else %}
-                                    <div class="message-row received">
-                                        <div class="message-bubble">
-                                            {{ msg.message_text }}
+                                        <div>
+                                            <h6 class="mb-0 fw-bold">{{ user.username }}</h6>
+                                            <small class="text-white-50">محادثة مشفرة</small>
                                         </div>
-                                        <small class="text-white-50 mt-1" style="font-size: 0.7rem;">{{ msg.sender.username }} | {{ msg.created_at.strftime('%H:%M') }}</small>
                                     </div>
-                                {% endif %}
+                                </a>
                             {% endfor %}
                         {% else %}
-                            <div class="text-center py-5 text-muted">
-                                <i class="fa-regular fa-comments fa-3x mb-3 text-info"></i>
-                                <p>ابدأ بمشاركة نجاحاتك وتحدث مع المجتمع الآن!</p>
+                            <!-- زر إنشاء مجموعة جديدة -->
+                            <div class="p-3">
+                                <button class="btn btn-outline-info w-100 rounded-pill" data-bs-toggle="modal" data-bs-target="#createGroupModal">
+                                    <i class="fa-solid fa-plus me-1"></i>إنشاء مجموعة جديدة
+                                </button>
                             </div>
+                            {% for group in my_groups %}
+                                <a href="{{ url_for('messages', tab='groups', group_id=group.id) }}" class="user-item {{ 'active' if selected_group_id|string == group.id|string else '' }}">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="bg-info rounded-circle d-flex align-items-center justify-content-center text-dark fw-bold" style="width: 40px; height: 40px;">
+                                            <i class="fa-solid fa-hashtag"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold">{{ group.name }}</h6>
+                                            <small class="text-white-50">دردشة جماعية للمشتركين</small>
+                                        </div>
+                                    </div>
+                                </a>
+                            {% endfor %}
                         {% endif %}
                     </div>
+                </div>
 
-                    <div class="chat-input-area">
-                        <form action="{{ url_for('messages') }}" method="POST" class="d-flex align-items-center gap-3" id="chatForm">
-                            <input type="hidden" name="receiver" value="admin" id="receiverInput">
-                            
-                            <input type="text" name="message" id="messageInput" class="form-control input-glass flex-grow-1" placeholder="اكتب رسالتك الراقية هنا..." required autocomplete="off">
-                            
-                            <button type="button" class="btn btn-circle" id="voiceBtn" onclick="toggleVoiceRecord()" title="تسجيل رسالة صوتية">
-                                <i class="fa-solid fa-microphone" id="micIcon"></i>
-                            </button>
-                            
-                            <button type="submit" class="btn btn-circle" title="إرسال">
-                                <i class="fa-solid fa-paper-plane text-info"></i>
-                            </button>
-                        </form>
-                    </div>
+                <!-- منطقة المحادثة الراقية -->
+                <div class="col-md-8 chat-area">
+                    {% if (active_tab == 'private' and chatting_with) or (active_tab == 'groups' and selected_group_id) %}
+                        <!-- ترويسة الشات النشط -->
+                        <div class="chat-header d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 45px; height: 45px;">
+                                    <i class="fa-solid {{ 'fa-user-lock' if active_tab == 'private' else 'fa-users' }}"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0 fw-bold">
+                                        {{ chatting_with if active_tab == 'private' else 'غرفة المجموعة النشطة' }}
+                                    </h5>
+                                    <small class="text-muted">محادثة مشفرة وآمنة تماماً</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- صندوق رسائل الشات النشط -->
+                        <div class="chat-messages" id="chatMessages">
+                            {% if active_tab == 'private' %}
+                                {% if private_messages %}
+                                    {% for msg in private_messages %}
+                                        <div class="message-row {{ 'sent' if msg.sender_id == current_user.id else 'received' }}">
+                                            <div class="message-bubble">
+                                                {{ msg.message_text }}
+                                            </div>
+                                            <small class="text-white-50 mt-1" style="font-size: 0.7rem;">
+                                                {{ 'أنت' if msg.sender_id == current_user.id else msg.sender.username }} | {{ msg.created_at.strftime('%H:%M') }}
+                                            </small>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-center py-5 text-muted">لا توجد رسائل سابقة. ابدأ المحادثة الآن!</div>
+                                {% endif %}
+                            {% else %}
+                                {% if group_messages %}
+                                    {% for msg in group_messages %}
+                                        <div class="message-row {{ 'sent' if msg.sender_id == current_user.id else 'received' }}">
+                                            <div class="message-bubble">
+                                                {{ msg.message_text }}
+                                            </div>
+                                            <small class="text-white-50 mt-1" style="font-size: 0.7rem;">
+                                                {{ 'أنت' if msg.sender_id == current_user.id else msg.sender.username }} | {{ msg.created_at.strftime('%H:%M') }}
+                                            </small>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-center py-5 text-muted">لا توجد رسائل في هذه المجموعة بعد. شارك برأيك الأول!</div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+
+                        <!-- مدخل إدخال الرسائل الذكي والموحد -->
+                        <div class="chat-input-area">
+                            <form action="{{ url_for('messages') }}" method="POST" class="d-flex align-items-center gap-2">
+                                <input type="hidden" name="chat_type" value="{{ active_tab }}">
+                                {% if active_tab == 'private' %}
+                                    <input type="hidden" name="receiver" value="{{ chatting_with }}">
+                                {% else %}
+                                    <input type="hidden" name="group_id" value="{{ selected_group_id }}">
+                                {% endif %}
+                                
+                                <input type="text" name="message" id="messageInput" class="form-control input-glass flex-grow-1" placeholder="اكتب رسالتك الراقية هنا..." required autocomplete="off">
+                                <button type="submit" class="btn btn-circle">
+                                    <i class="fa-solid fa-paper-plane text-info"></i>
+                                </button>
+                            </form>
+                        </div>
+                    {% else %}
+                        <!-- شاشة ترحيبية عند عدم تحديد أي شات -->
+                        <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+                            <i class="fa-regular fa-comments fa-4x mb-3 text-info"></i>
+                            <h4>مرحباً بك في مركز تواصل "نجاحي هو نجاحك"</h4>
+                            <p class="small">الرجاء اختيار مستخدم أو مجموعة من القائمة الجانبية لبدء التواصل الآمن.</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- نافذة إنشاء الجروب السريعة (Modal) -->
+    <div class="modal fade" id="createGroupModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title fw-bold">إنشاء مجموعة جديدة</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{{ url_for('create_group') }}" method="POST">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label text-white-50">اسم المجموعة</label>
+                            <input type="text" name="group_name" class="form-control bg-black text-white border-secondary" placeholder="مثل: عشاق الخيل والسيبراني" required autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">إلغاء</button>
+                        <button type="submit" class="btn btn-info text-dark">إنشاء الآن</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // نزول الشات تلقائياً لأسفل رسالة
         const chatMessages = document.getElementById('chatMessages');
         if (chatMessages) {
             chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        // 📞 نظام محاكاة الاتصال الصوتي الراقي
-        function startCall() {
-            document.getElementById('callOverlay').style.display = 'flex';
-            // تشغيل نغمة اتصال محاكاة بسيطة
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioCtx.createOscillator();
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // نغمة اتصال كلاسيكية
-            oscillator.connect(audioCtx.destination);
-            oscillator.start();
-            window.activeOscillator = oscillator;
-        }
-
-        function endCall() {
-            document.getElementById('callOverlay').style.display = 'none';
-            if (window.activeOscillator) {
-                window.activeOscillator.stop();
-            }
-        }
-
-        // 🎙️ نظام تسجيل الصوت التفاعلي الفاخر (Voice Recorder Simulation)
-        let isRecording = false;
-        function toggleVoiceRecord() {
-            const micIcon = document.getElementById('micIcon');
-            const messageInput = document.getElementById('messageInput');
-            
-            if (!isRecording) {
-                isRecording = true;
-                micIcon.className = 'fa-solid fa-circle-stop text-danger animate-pulse';
-                messageInput.value = '🎤 جاري تسجيل صوتك بنقاء عالي...';
-                messageInput.disabled = true;
-            } else {
-                isRecording = false;
-                micIcon.className = 'fa-solid fa-microphone';
-                messageInput.disabled = false;
-                
-                // إضافة تسجيل الصوت الوهمي داخل المحادثة كأنه تم إرساله
-                messageInput.value = "";
-                const audioHtml = `
-                    <div class="message-row sent">
-                        <div class="message-bubble">
-                            <div class="voice-player">
-                                <i class="fa-solid fa-play text-info cursor-pointer"></i>
-                                <div class="bg-secondary rounded" style="width: 120px; height: 4px;"></div>
-                                <span class="small">0:08</span>
-                            </div>
-                        </div>
-                        <small class="text-white-50 mt-1" style="font-size: 0.7rem;">أنت | صوتي</small>
-                    </div>
-                `;
-                chatMessages.insertAdjacentHTML('beforeend', audioHtml);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
         }
     </script>
 </body>
