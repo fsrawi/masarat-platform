@@ -7,35 +7,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { 
-            background-color: #0a0a0a; 
-            color: #f3f4f6; 
-            font-family: 'Tajawal', sans-serif; 
-        }
-        .navbar {
-            background: rgba(10, 10, 10, 0.9) !important;
-            border-bottom: 2px solid #d4af37; 
-        }
+        body { background-color: #0a0a0a; color: #f3f4f6; font-family: 'Tajawal', sans-serif; }
+        .navbar { background: rgba(10, 10, 10, 0.9) !important; border-bottom: 2px solid #d4af37; }
         .text-gold { color: #d4af37 !important; }
         .btn-gold { background-color: #d4af37; color: #0a0a0a; font-weight: bold; border: none; }
         .btn-gold:hover { background-color: #b5952f; color: #000; }
-        .glass-card {
-            background: #151515; 
-            border: 1px solid #333; 
-            border-radius: 16px; 
-            padding: 25px; 
-            margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            transition: transform 0.3s ease, border-color 0.3s ease;
-        }
-        .glass-card:hover { border-color: #d4af37; transform: translateY(-5px); }
-        .hero-section {
-            padding: 80px 0;
-            text-align: center;
-            background: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%);
-            border-bottom: 1px solid #333;
-            margin-bottom: 40px;
-        }
+        .glass-card { background: #151515; border: 1px solid #333; border-radius: 16px; padding: 25px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .hero-section { padding: 80px 0; text-align: center; background: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%); border-bottom: 1px solid #333; margin-bottom: 40px; }
     </style>
 </head>
 <body>
@@ -45,18 +23,11 @@
             <div class="d-flex gap-3 align-items-center">
                 <a href="{{ url_for('toggle_lang') }}" class="text-white-50 text-decoration-none">AR/EN</a>
                 {% if current_user.is_authenticated %}
-                    
                     {% if current_user.is_admin %}
                         <a href="{{ url_for('admin_panel') }}" class="btn btn-danger btn-sm rounded-pill px-3"><i class="fa-solid fa-user-shield me-1"></i>الأدمن</a>
                     {% endif %}
-
                     <a href="{{ url_for('add_story') }}" class="btn btn-gold btn-sm rounded-pill px-3">{{ t['create_story'] }}</a>
-                    <a href="{{ url_for('messages') }}" class="btn btn-outline-light btn-sm rounded-pill position-relative">
-                        <i class="fa-solid fa-envelope"></i>
-                        {% if has_unread_messages %}
-                        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
-                        {% endif %}
-                    </a>
+                    <a href="{{ url_for('messages') }}" class="btn btn-outline-light btn-sm rounded-pill"><i class="fa-solid fa-envelope"></i></a>
                     <a href="{{ url_for('profile', username=current_user.username) }}" class="btn btn-outline-light btn-sm rounded-pill"><i class="fa-solid fa-user"></i></a>
                     <a href="{{ url_for('logout') }}" class="text-danger text-decoration-none small"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
                 {% else %}
@@ -71,47 +42,47 @@
     <div class="hero-section">
         <div class="container">
             <h1 class="display-4 fw-bold text-gold mb-4">نجاحك يبدأ من هنا</h1>
-            <p class="lead text-white-50 w-75 mx-auto mb-5">منصة صُممت لأصحاب الأرواح المتمردة على السطحية. هنا نشارك مساراتنا، تحدياتنا، ولحظات التحول الحقيقية. انضم لمجتمع يصنع الفرق.</p>
+            <p class="lead text-white-50 w-75 mx-auto mb-5">هنا نشارك مساراتنا، تحدياتنا، ولحظات التحول الحقيقية. انضم لمجتمع يصنع الفرق.</p>
             <a href="{{ url_for('register') }}" class="btn btn-gold btn-lg rounded-pill px-5">ابدأ مسارك الآن</a>
         </div>
     </div>
     {% endif %}
 
     <div class="container py-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} rounded-pill text-center border-0">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
         <h2 class="mb-5 text-center fw-bold text-white"><i class="fa-solid fa-fire text-gold me-2"></i>{{ t['main_heading'] }}</h2>
-
         <div class="row justify-content-center">
             <div class="col-lg-9">
                 {% for story in stories %}
                     <div class="glass-card">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h3 class="text-gold fw-bold mb-0">{{ story.title }}</h3>
-                            <small class="text-muted"><a href="{{ url_for('profile', username=story.author.username) }}" class="text-white-50 text-decoration-none"><i class="fa-solid fa-pen-nib me-1"></i>{{ story.author.username }}</a></small>
+                            <small class="text-muted">
+                                {% if story.author %}
+                                    <a href="{{ url_for('profile', username=story.author.username) }}" class="text-white-50 text-decoration-none"><i class="fa-solid fa-pen-nib me-1"></i>{{ story.author.username }}</a>
+                                {% endif %}
+                            </small>
                         </div>
                         <hr class="border-secondary">
                         <h6 class="mt-4 text-white-50 fw-bold"><i class="fa-solid fa-mountain me-2"></i>{{ t['challenge'] }}</h6>
                         <p class="text-white">{{ story.challenge }}</p>
-                        
                         <h6 class="mt-4 text-white-50 fw-bold"><i class="fa-solid fa-bolt me-2"></i>{{ t['turning_point'] }}</h6>
                         <p class="text-white">{{ story.turning_point }}</p>
-                        
                         <h6 class="mt-4 text-white-50 fw-bold"><i class="fa-solid fa-flag-checkered me-2"></i>{{ t['outcome'] }}</h6>
                         <p class="text-white mb-4">{{ story.outcome }}</p>
-                        
                         <hr class="border-secondary mb-3">
                         
                         <div class="d-flex align-items-center gap-3 mb-3">
                             <form action="{{ url_for('like_story', story_id=story.id) }}" method="POST">
+                                {% set user_liked = false %}
+                                {% if current_user.is_authenticated %}
+                                    {% for like in story.likes %}
+                                        {% if like.user_id == current_user.id %}
+                                            {% set user_liked = true %}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
                                 <button type="submit" class="btn btn-sm btn-outline-light rounded-pill">
-                                    <i class="fa-solid fa-heart {% if current_user.is_authenticated and current_user.id in story.likes|map(attribute='user_id') %}text-danger{% endif %}"></i> {{ story.likes|length }}
+                                    <i class="fa-solid fa-heart {% if user_liked %}text-danger{% endif %}"></i> {{ story.likes|length }}
                                 </button>
                             </form>
                             <span class="text-white-50 small"><i class="fa-solid fa-comment"></i> {{ story.comments|length }} {{ t['comments'] }}</span>
@@ -120,7 +91,7 @@
                         <div class="bg-dark p-3 rounded-3 mb-3 border border-secondary">
                             {% for comment in story.comments %}
                                 <div class="mb-2">
-                                    <strong class="text-gold small">{{ comment.author.username }}</strong>
+                                    <strong class="text-gold small">{% if comment.author %}{{ comment.author.username }}{% endif %}</strong>
                                     <span class="text-white ms-2 small">{{ comment.content }}</span>
                                 </div>
                             {% else %}

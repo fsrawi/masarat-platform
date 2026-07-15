@@ -1,4 +1,5 @@
 import os
+import traceback
 from datetime import datetime, date
 from flask import Flask, render_template, redirect, url_for, request, flash, session, abort
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -30,10 +31,9 @@ def load_user(user_id):
 
 with app.app_context():
     try:
-        # قفلنا المسح عشان بياناتك تظل محفوظة للأبد
+        # قفلنا المسح للحفاظ على الحسابات
         # db.drop_all() 
         db.create_all() 
-        
         fawzi_admin = User.query.filter(User.username.ilike('fawzi')).first()
         if fawzi_admin:
             fawzi_admin.is_admin = True
@@ -43,8 +43,7 @@ with app.app_context():
 
 def is_disposable_email(email):
     disposable_domains = ['mailinator.com', 'tempmail.com', 'yopmail.com']
-    domain = email.split('@')[-1].lower() if '@' in email else ''
-    return domain in disposable_domains
+    return (email.split('@')[-1].lower() if '@' in email else '') in disposable_domains
 
 def calculate_age(birth_date):
     if not birth_date: return 18 
@@ -59,9 +58,11 @@ def inject_global_vars():
     has_unread = False
     is_underage = False
     if current_user.is_authenticated:
-        try: has_unread = DirectMessage.query.filter_by(receiver_id=current_user.id, is_read=False).count() > 0
+        try: 
+            has_unread = DirectMessage.query.filter_by(receiver_id=current_user.id, is_read=False).count() > 0
+            if hasattr(current_user, 'birth_date') and current_user.birth_date:
+                is_underage = calculate_age(current_user.birth_date) < 18
         except: pass
-        if current_user.birth_date: is_underage = calculate_age(current_user.birth_date) < 18
     return dict(has_unread_messages=has_unread, current_lang=session.get('lang', 'ar'), is_underage=is_underage)
 
 @app.route('/toggle-lang')
@@ -71,41 +72,40 @@ def toggle_lang():
 
 @app.route('/')
 def home():
-    try: stories = Story.query.order_by(Story.created_at.desc()).all()
-    except: stories = []
-    
-    t = {
-        'ar': {
-            'title': 'منصة نجاحي', 'brand': 'منصة نجاحي', 'create_story': 'أنشئ قصتك', 
-            'messages': 'الرسائل', 'profile': 'ملفي', 'logout': 'خروج', 'login': 'دخول', 
-            'register': 'حساب جديد', 'main_heading': 'مسارات وتجارب ملهمة', 
-            'no_stories': 'لا توجد قصص بعد.', 'published_by': 'بواسطة:', 
-            'challenge': 'التحدي', 'turning_point': 'التحول', 'outcome': 'النتيجة',
-            'comments': 'التعليقات', 'add_comment_placeholder': 'اكتب تعليقاً...', 
-            'comment_btn': 'إرسال', 'no_comments': 'لا توجد تعليقات'
-        },
-        'en': {
-            'title': 'My Success', 'brand': 'My Success', 'create_story': 'Create Story', 
-            'messages': 'Messages', 'profile': 'Profile', 'logout': 'Logout', 
-            'login': 'Login', 'register': 'Register', 'main_heading': 'Inspiring Paths', 
-            'no_stories': 'No stories yet.', 'published_by': 'By:', 
-            'challenge': 'Challenge', 'turning_point': 'Turning Point', 'outcome': 'Outcome',
-            'comments': 'Comments', 'add_comment_placeholder': 'Write a comment...', 
-            'comment_btn': 'Send', 'no_comments': 'No comments'
-        }
-    }[session.get('lang', 'ar')]
-    
-    return render_template('home.html', stories=stories, show_welcome=not current_user.is_authenticated, t=t)
+    try:
+        try: stories = Story.query.order_by(Story.created_at.desc()).all()
+        except: stories = []
+        
+        t = {
+            'ar': {
+                'title': 'منصة نجاحي', 'brand': 'منصة نجاحي', 'create_story': 'أنشئ قصتك', 
+                'messages': 'الرسائل', 'profile': 'ملفي', 'logout': 'خروج', 'login': 'دخول', 
+                'register': 'حساب جديد', 'main_heading': 'مسارات وتجارب ملهمة', 
+                'no_stories': 'لا توجد قصص بعد.', 'published_by': 'بواسطة:', 
+                'challenge': 'التحدي', 'turning_point': 'التحول', 'outcome': 'النتيجة',
+                'comments': 'التعليقات', 'add_comment_placeholder': 'اكتب تعليقاً...', 
+                'comment_btn': 'إرسال', 'no_comments': 'لا توجد تعليقات'
+            },
+            'en': {
+                'title': 'My Success', 'brand': 'My Success', 'create_story': 'Create Story', 
+                'messages': 'Messages', 'profile': 'Profile', 'logout': 'Logout', 
+                'login': 'Login', 'register': 'Register', 'main_heading': 'Inspiring Paths', 
+                'no_stories': 'No stories yet.', 'published_by': 'By:', 
+                'challenge': 'Challenge', 'turning_point': 'Turning Point', 'outcome': 'Outcome',
+                'comments': 'Comments', 'add_comment_placeholder': 'Write a comment...', 
+                'comment_btn': 'Send', 'no_comments': 'No comments'
+            }
+        }[session.get('lang', 'ar')]
+        
+        return render_template('home.html', stories=stories, show_welcome=not current_user.is_authenticated, t=t)
+    except Exception as e:
+        return f"<div dir='ltr' style='background:#111; color:#ff4444; padding:20px; font-family:monospace;'><h3>🚨 ERROR:</h3><pre>{traceback.format_exc()}</pre></div>"
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated: return redirect(url_for('home'))
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
-        if not email:
-            flash('البريد الإلكتروني مطلوب!', 'danger')
-            return redirect(url_for('register'))
-
         if is_disposable_email(email):
             flash('البريد الوهمي غير مسموح!', 'danger')
             return redirect(url_for('register'))
@@ -132,10 +132,8 @@ def register():
 def login():
     if current_user.is_authenticated: return redirect(url_for('home'))
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        password = request.form.get('password', '')
-        user = User.query.filter_by(username=username).first()
-        if user and user.check_password(password):
+        user = User.query.filter_by(username=request.form.get('username', '').strip()).first()
+        if user and user.check_password(request.form.get('password', '')):
             login_user(user, remember=True)
             return redirect(url_for('home'))
         flash('بيانات غير صحيحة!', 'danger')
@@ -150,17 +148,10 @@ def logout():
 @app.route('/add-story', methods=['GET', 'POST'])
 @login_required
 def add_story():
-    try:
-        if calculate_age(current_user.birth_date) < 18:
-            flash('نشر القصص يتطلب عمر 18 عاماً فأكثر.', 'warning')
-            return redirect(url_for('home'))
-    except: pass
-        
     if request.method == 'POST':
         new_story = Story(user_id=current_user.id, title=request.form.get('title', ''), challenge=request.form.get('challenge', ''), turning_point=request.form.get('turning_point', ''), outcome=request.form.get('outcome', ''))
         db.session.add(new_story)
         db.session.commit()
-        flash('تم النشر!', 'success')
         return redirect(url_for('home'))
     return render_template('add_story.html')
 
@@ -211,9 +202,6 @@ def messages():
     if chatting_with:
         other = User.query.filter_by(username=chatting_with).first()
         if other:
-            unread = DirectMessage.query.filter_by(sender_id=other.id, receiver_id=current_user.id, is_read=False).all()
-            for u in unread: u.is_read = True
-            db.session.commit()
             private_msgs = DirectMessage.query.filter(
                 or_((DirectMessage.sender_id == current_user.id) & (DirectMessage.receiver_id == other.id),
                     (DirectMessage.sender_id == other.id) & (DirectMessage.receiver_id == current_user.id))
@@ -225,36 +213,30 @@ def messages():
     
     return render_template('messages.html', 
                            all_users=User.query.filter(User.id != current_user.id).all(), 
-                           my_groups=current_user.chat_groups.all(), 
+                           my_groups=current_user.chat_groups.all() if current_user.is_authenticated else [], 
                            private_messages=private_msgs, 
                            group_messages=group_msgs, 
-                           active_tab=active_tab, 
-                           chatting_with=chatting_with, 
-                           selected_group_id=selected_group_id)
+                           active_tab=active_tab, chatting_with=chatting_with, selected_group_id=selected_group_id)
 
-# --- تم تحديث هذه الدالة لإضافة الأعضاء المحددين للمجموعة ---
 @app.route('/create-group', methods=['POST'])
 @login_required
 def create_group():
     group_name = request.form.get('group_name', '').strip()
-    selected_users_ids = request.form.getlist('members') # جلب قائمة الأعضاء المحددين
+    selected_users_ids = request.form.getlist('members') 
     
     if group_name and not Group.query.filter_by(name=group_name).first():
         new_group = Group(name=group_name, created_by=current_user.id)
-        new_group.members.append(current_user) # إضافة المنشئ تلقائياً
+        new_group.members.append(current_user) 
         
-        # إضافة الأعضاء الذين تم تحديدهم
         for uid in selected_users_ids:
-            user_to_add = User.query.get(int(uid))
-            if user_to_add and user_to_add != current_user:
-                new_group.members.append(user_to_add)
+            try:
+                user_to_add = User.query.get(int(uid))
+                if user_to_add and user_to_add != current_user:
+                    new_group.members.append(user_to_add)
+            except: pass
                 
         db.session.add(new_group)
         db.session.commit()
-        flash('تم إنشاء المجموعة وإضافة الأعضاء بنجاح!', 'success')
-    else:
-        flash('اسم المجموعة مستخدم مسبقاً أو غير صالح.', 'danger')
-        
     return redirect(url_for('messages', tab='groups'))
 
 @app.route('/profile/<username>')
@@ -278,61 +260,27 @@ def edit_profile():
         current_user.phone = request.form.get('phone', '').strip()
         current_user.country = request.form.get('country', '').strip()
         current_user.city = request.form.get('city', '').strip()
-        
-        if current_user.occupation_type == 'student':
-            current_user.university_name = request.form.get('university_name', '').strip()
-        else:
-            current_user.company_name = request.form.get('company_name', '').strip()
-            
         db.session.commit()
-        flash('تم التحديث بنجاح!', 'success')
         return redirect(url_for('profile', username=current_user.username))
-        
     return render_template('edit_profile.html')
 
 @app.route('/clear-chat/<username>', methods=['POST'])
 @login_required
 def clear_chat(username):
     other_user = User.query.filter_by(username=username).first_or_404()
-    messages_to_delete = DirectMessage.query.filter(
-        or_(
-            (DirectMessage.sender_id == current_user.id) & (DirectMessage.receiver_id == other_user.id),
-            (DirectMessage.sender_id == other_user.id) & (DirectMessage.receiver_id == current_user.id)
-        )
+    msgs = DirectMessage.query.filter(
+        or_((DirectMessage.sender_id == current_user.id) & (DirectMessage.receiver_id == other_user.id),
+            (DirectMessage.sender_id == other_user.id) & (DirectMessage.receiver_id == current_user.id))
     ).all()
-    for msg in messages_to_delete:
-        db.session.delete(msg)
+    for m in msgs: db.session.delete(m)
     db.session.commit()
     return redirect(url_for('messages', tab='private'))
-
-@app.route('/block/<int:user_id>', methods=['POST'])
-@login_required
-def block_user(user_id):
-    if current_user.id != user_id and not Block.query.filter_by(blocker_id=current_user.id, blocked_id=user_id).first():
-        db.session.add(Block(blocker_id=current_user.id, blocked_id=user_id))
-        db.session.commit()
-    return redirect(request.referrer or url_for('home'))
 
 @app.route('/admin')
 @login_required
 def admin_panel():
-    if not current_user.is_admin:
-        abort(403)
-    users = User.query.all()
-    reports = Report.query.order_by(Report.created_at.desc()).all()
-    stories = Story.query.all()
-    return render_template('admin.html', users=users, reports=reports, stories=stories)
-
-@app.route('/admin/delete-user/<int:user_id>', methods=['POST'])
-@login_required
-def admin_delete_user(user_id):
-    if not current_user.is_admin:
-        abort(403)
-    user = User.query.get_or_404(user_id)
-    db.session.delete(user)
-    db.session.commit()
-    flash('تم حذف المستخدم بنجاح.', 'success')
-    return redirect(url_for('admin_panel'))
+    if not current_user.is_admin: abort(403)
+    return render_template('admin.html', users=User.query.all(), reports=Report.query.all(), stories=Story.query.all())
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
