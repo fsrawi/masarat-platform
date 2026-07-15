@@ -12,7 +12,6 @@
         .glass-card { background: #151515; border: 1px solid #333; border-radius: 20px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .form-control, .form-check-input { background-color: #222; border: 1px solid #444; color: #fff; }
         .form-control:focus { background-color: #333; border-color: #d4af37; color: #fff; box-shadow: none; }
-        .form-check-input:checked { background-color: #d4af37; border-color: #d4af37; }
     </style>
 </head>
 <body>
@@ -35,7 +34,7 @@
 
                     <div class="mb-4">
                         <label class="form-label text-gold">نبذة عنك (Bio)</label>
-                        <textarea name="bio" class="form-control rounded-3" rows="3" placeholder="اكتب شيئاً ملهماً...">{{ current_user.bio or '' }}</textarea>
+                        <textarea name="bio" class="form-control rounded-3" rows="3">{{ current_user.bio or '' }}</textarea>
                     </div>
 
                     <div class="row g-3 mb-4">
@@ -65,7 +64,7 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-warning w-100 rounded-pill fw-bold" style="background-color: #d4af37; color: #000;">حفظ التعديلات</button>
+                    <button type="submit" class="btn w-100 rounded-pill fw-bold" style="background-color: #d4af37; color: #000;">حفظ التعديلات</button>
                 </form>
             </div>
         </div>
