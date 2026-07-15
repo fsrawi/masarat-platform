@@ -205,13 +205,61 @@ def add_comment(story_id):
 @app.route('/story/<int:story_id>/like', methods=['POST'])
 @login_required
 def like_story(story_id):
-    # البحث إذا كان المستخدم قد أعجب بالقصة مسبقاً
     existing_like = Like.query.filter_by(user_id=current_user.id, story_id=story_id).first()
     
     if existing_like:
-        # إذا كان معجباً بها، نقوم بإلغاء الإعجاب (Unlike)
         db.session.delete(existing_like)
         db.session.commit()
     else:
-        # إذا لم يكن معجباً بها، ننشئ إعجاباً جديداً
         new_like = Like(user_id=current_user.id, story_id=story_id)
+        db.session.add(new_like)
+        db.session.commit()
+        
+    return redirect(url_for('home'))
+
+
+# --- 6. مسارات الرسائل الخاصة ---
+@app.route('/messages', methods=['GET', 'POST'])
+@login_required
+def messages():
+    if request.method == 'POST':
+        receiver_username = request.form.get('receiver').strip()
+        message_text = request.form.get('message').strip()
+        
+        receiver = User.query.filter_by(username=receiver_username).first()
+        if not receiver:
+            flash('هذا المستخدم غير موجود بالمنصة!', 'danger')
+        elif receiver.id == current_user.id:
+            flash('لا يمكنك إرسال رسالة لنفسك!', 'warning')
+        elif message_text:
+            new_message = DirectMessage(
+                sender_id=current_user.id,
+                receiver_id=receiver.id,
+                message_text=message_text
+            )
+            db.session.add(new_message)
+            db.session.commit()
+            flash('تم إرسال الرسالة بنجاح!', 'success')
+            
+        return redirect(url_for('messages'))
+
+    all_messages = DirectMessage.query.filter(
+        or_(
+            DirectMessage.sender_id == current_user.id,
+            DirectMessage.receiver_id == current_user.id
+        )
+    ).order_by(DirectMessage.created_at.asc()).all()
+    
+    unread_messages = DirectMessage.query.filter_by(receiver_id=current_user.id, is_read=False).all()
+    for msg in unread_messages:
+        msg.is_read = True
+    db.session.commit()
+    
+    return render_template('messages.html', messages=all_messages)
+
+
+# --- التشغيل البرمجي وتحديد المنفذ (Port Binding) ديناميكياً لـ Render ---
+if __name__ == '__main__':
+    # جلب المنفذ ديناميكياً من خادم Render، وإن لم يكن متوفراً يتم التعيين افتراضياً على 10000
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
