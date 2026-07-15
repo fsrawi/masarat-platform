@@ -7,7 +7,7 @@ WORKDIR /app
 # نسخ ملف المتطلبات
 COPY requirements.txt .
 
-# خطوة أمنية: ترقية الأدوات والمكتبات المصابة إلى نسخ آمنة وخالية من الثغرات
+# خطوة أمنية لترقية الحزم المصابة وإصلاح الثغرات
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel jaraco.context
 
 # تثبيت متطلبات مشروعك
