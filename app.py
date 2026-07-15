@@ -32,8 +32,8 @@ def load_user(user_id):
 # بناء وتحديث الجداول بأمان تام دون التسبب في انهيار السيرفر (Error 500)
 with app.app_context():
     try:
-        # ملاحظة: إذا أردت تصفير البيانات كلياً لتطبيق الأعمدة الجديدة، قم بتفعيل السطر التالي لمرة واحدة فقط ثم احذفه
-        # db.drop_all() 
+        # تفعيل مسح الجداول القديمة المتعارضة لمرة واحدة لإنشاء الأعمدة الجديدة
+        db.drop_all() 
         db.create_all()
         
         # جعل حسابك الافتراضي (fawzi) أدمن تلقائياً إن وجد
@@ -80,7 +80,7 @@ def toggle_lang():
     session['lang'] = 'en' if old_lang == 'ar' else 'ar'
     return redirect(request.referrer or url_for('home'))
 
-# --- 1. المسار الرئيسي (تم حل مشكلة الترجمة t) ---
+# --- 1. المسار الرئيسي (عرض القصص مع شاشة ترحيبية وتمرير الترجمة) ---
 @app.route('/')
 def home():
     try:
@@ -392,7 +392,7 @@ def submit_report():
     )
     db.session.add(new_report)
     db.session.commit()
-    flash('تم رفع البلاغ بنجاح للجنة الإشراف، وسنتعامل معه بسرية تامة.', 'success')
+    flash('تم رفع البلاغ بنجاح للجنة الإشراف، وسنتعامل معه بسرية تامة لحماية خصوصيتك.', 'success')
     return redirect(request.referrer or url_for('home'))
 
 # --- 9. لوحة تحكم الإشراف للأدمن ---
