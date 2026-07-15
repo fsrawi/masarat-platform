@@ -30,11 +30,10 @@ def load_user(user_id):
 
 with app.app_context():
     try:
-        # تم قفل المسح للأبد لأن التحديث نجح، الآن لن تفقد أي حساب!
+        # قفلنا المسح عشان بياناتك تظل محفوظة للأبد
         # db.drop_all() 
         db.create_all() 
         
-        # تفعيل صلاحية الأدمن لحسابك
         fawzi_admin = User.query.filter(User.username.ilike('fawzi')).first()
         if fawzi_admin:
             fawzi_admin.is_admin = True
@@ -75,7 +74,6 @@ def home():
     try: stories = Story.query.order_by(Story.created_at.desc()).all()
     except: stories = []
     
-    # تم إضافة كلمات التعليقات التي تسببت في انهيار الواجهة
     t = {
         'ar': {
             'title': 'منصة نجاحي', 'brand': 'منصة نجاحي', 'create_story': 'أنشئ قصتك', 
@@ -234,15 +232,29 @@ def messages():
                            chatting_with=chatting_with, 
                            selected_group_id=selected_group_id)
 
+# --- تم تحديث هذه الدالة لإضافة الأعضاء المحددين للمجموعة ---
 @app.route('/create-group', methods=['POST'])
 @login_required
 def create_group():
     group_name = request.form.get('group_name', '').strip()
+    selected_users_ids = request.form.getlist('members') # جلب قائمة الأعضاء المحددين
+    
     if group_name and not Group.query.filter_by(name=group_name).first():
         new_group = Group(name=group_name, created_by=current_user.id)
-        new_group.members.append(current_user)
+        new_group.members.append(current_user) # إضافة المنشئ تلقائياً
+        
+        # إضافة الأعضاء الذين تم تحديدهم
+        for uid in selected_users_ids:
+            user_to_add = User.query.get(int(uid))
+            if user_to_add and user_to_add != current_user:
+                new_group.members.append(user_to_add)
+                
         db.session.add(new_group)
         db.session.commit()
+        flash('تم إنشاء المجموعة وإضافة الأعضاء بنجاح!', 'success')
+    else:
+        flash('اسم المجموعة مستخدم مسبقاً أو غير صالح.', 'danger')
+        
     return redirect(url_for('messages', tab='groups'))
 
 @app.route('/profile/<username>')

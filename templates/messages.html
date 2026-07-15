@@ -23,10 +23,19 @@
         </div>
     </nav>
     <div class="container">
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} rounded-pill text-center border-0 mb-4">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
         <div class="row">
             <div class="col-md-4 mb-4">
                 <div class="bg-dark p-3 rounded-4 border border-secondary mb-3">
-                    <h5 class="text-gold border-bottom border-secondary pb-2">رسالة جديدة</h5>
+                    <h5 class="text-gold border-bottom border-secondary pb-2">رسالة خاصة</h5>
                     <form action="{{ url_for('messages') }}" method="POST" enctype="multipart/form-data">
                         <input type="hidden" name="chat_type" value="private">
                         <select name="receiver" class="form-select bg-dark text-white border-secondary mb-2" required>
@@ -45,11 +54,19 @@
                     </form>
                 </div>
 
-                <div class="bg-dark p-3 rounded-4 border border-secondary">
+                <div class="bg-dark p-3 rounded-4 border border-secondary mb-3">
                     <h5 class="text-gold border-bottom border-secondary pb-2">إنشاء مجموعة</h5>
                     <form action="{{ url_for('create_group') }}" method="POST">
                         <input type="text" name="group_name" class="form-control bg-dark text-white border-secondary mb-2" placeholder="اسم المجموعة..." required>
-                        <button type="submit" class="btn btn-outline-light w-100 rounded-pill">إنشاء</button>
+                        
+                        <label class="form-label text-white-50 small mt-2">حدد أعضاء المجموعة (يمكنك اختيار أكثر من شخص):</label>
+                        <select name="members" class="form-select bg-dark text-white border-secondary mb-3" multiple style="height: 120px;">
+                            {% for u in all_users %}
+                                <option value="{{ u.id }}">{{ u.username }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <button type="submit" class="btn btn-outline-light w-100 rounded-pill">إنشاء المجموعة</button>
                     </form>
                 </div>
             </div>
