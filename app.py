@@ -31,12 +31,10 @@ def load_user(user_id):
 
 with app.app_context():
     try:
-        # فحص تلقائي لإنشاء الجداول الناقصة دون مسح البيانات
         db.create_all() 
     except Exception as db_err:
         print(f"⚠️ DATABASE ERROR: {db_err}")
 
-# تفعيل صلاحية الأدمن تلقائياً لحسابك fawzi
 @app.before_request
 def auto_admin():
     try:
@@ -105,7 +103,7 @@ def home():
         
         return render_template('home.html', stories=stories, show_welcome=not current_user.is_authenticated, t=t)
     except Exception as e:
-        return f"<div dir='ltr' style='background:#111; color:#ff4444; padding:20px; font-family:monospace;'><h3>🚨 HOME ERROR:</h3><pre>{traceback.format_exc()}</pre></div>"
+        return f"<div dir='ltr' style='background:#111; color:#ff4444; padding:20px; font-family:monospace;'><h3>🚨 ERROR:</h3><pre>{traceback.format_exc()}</pre></div>"
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -190,21 +188,38 @@ def messages():
     
     if request.method == 'POST':
         chat_type = request.form.get('chat_type')
+        voice = request.files.get('voice_file')
+        voice_name = None
+        
+        if voice and voice.filename:
+            filename = secure_filename(voice.filename)
+            voice_name = f"voice_{int(datetime.utcnow().timestamp())}_{filename}"
+            voice.save(os.path.join(app.config['UPLOAD_FOLDER'], voice_name))
+
         if chat_type == 'private':
             receiver = User.query.filter_by(username=request.form.get('receiver', '').strip()).first()
             msg = request.form.get('message', '').strip()
-            if receiver and msg:
-                db.session.add(DirectMessage(sender_id=current_user.id, receiver_id=receiver.id, message_text=msg))
+            if receiver and (msg or voice_name):
+                db.session.add(DirectMessage(
+                    sender_id=current_user.id, receiver_id=receiver.id, 
+                    message_text=msg, voice_file=voice_name, is_voice=bool(voice_name)
+                ))
                 db.session.commit()
                 return redirect(url_for('messages', tab='private', **{'with': receiver.username}))
+                
         elif chat_type == 'group':
             group = Group.query.get(request.form.get('group_id'))
             msg = request.form.get('message', '').strip()
-            if group and msg:
-                db.session.add(GroupMessage(group_id=group.id, sender_id=current_user.id, message_text=msg))
+            if group and (msg or voice_name):
+                db.session.add(GroupMessage(
+                    group_id=group.id, sender_id=current_user.id, 
+                    message_text=msg, voice_file=voice_name, is_voice=bool(voice_name)
+                ))
                 db.session.commit()
                 return redirect(url_for('messages', tab='groups', group_id=group.id))
 
+    # جلب الرسائل الخاصة
+    private_msgs = []
     if chatting_with:
         other = User.query.filter_by(username=chatting_with).first()
         if other:
@@ -212,14 +227,19 @@ def messages():
                 or_((DirectMessage.sender_id == current_user.id) & (DirectMessage.receiver_id == other.id),
                     (DirectMessage.sender_id == other.id) & (DirectMessage.receiver_id == current_user.id))
             ).order_by(DirectMessage.created_at.asc()).all()
-        else: private_msgs = []
-    else: private_msgs = []
 
-    group_msgs = GroupMessage.query.filter_by(group_id=selected_group_id).order_by(GroupMessage.created_at.asc()).all() if selected_group_id else []
-    
+    # جلب رسائل المجموعات
+    group_msgs = []
+    if selected_group_id:
+        group_msgs = GroupMessage.query.filter_by(group_id=selected_group_id).order_by(GroupMessage.created_at.asc()).all()
+
+    # جلب المجموعات التي يشترك فيها المستخدم الحالي فقط
+    my_groups = current_user.chat_groups.all() if current_user.is_authenticated else []
+    all_users = User.query.filter(User.id != current_user.id).all()
+
     return render_template('messages.html', 
-                           all_users=User.query.filter(User.id != current_user.id).all(), 
-                           my_groups=current_user.chat_groups.all() if current_user.is_authenticated else [], 
+                           all_users=all_users, 
+                           my_groups=my_groups, 
                            private_messages=private_msgs, 
                            group_messages=group_msgs, 
                            active_tab=active_tab, chatting_with=chatting_with, selected_group_id=selected_group_id)
@@ -244,6 +264,28 @@ def create_group():
         db.session.add(new_group)
         db.session.commit()
     return redirect(url_for('messages', tab='groups'))
+
+# --- مسار حذف الرسائل المحددة (جديد ومطلوب) ---
+@app.route('/delete-selected-messages', methods=['POST'])
+@login_required
+def delete_selected_messages():
+    msg_ids = request.form.getlist('message_ids')
+    is_group = request.form.get('is_group') == 'true'
+    chatting_with = request.form.get('chatting_with', '')
+    group_id = request.form.get('group_id', '')
+    
+    if msg_ids:
+        ids_as_int = [int(i) for i in msg_ids]
+        if is_group:
+            GroupMessage.query.filter(GroupMessage.id.in_(ids_as_int), GroupMessage.sender_id == current_user.id).delete(synchronize_session=False)
+        else:
+            DirectMessage.query.filter(DirectMessage.id.in_(ids_as_int), DirectMessage.sender_id == current_user.id).delete(synchronize_session=False)
+        db.session.commit()
+        flash('تم حذف الرسائل المحددة بنجاح', 'success')
+        
+    if is_group:
+        return redirect(url_for('messages', tab='groups', group_id=group_id))
+    return redirect(url_for('messages', tab='private', **{'with': chatting_with}))
 
 @app.route('/profile/<username>')
 @login_required
@@ -281,34 +323,4 @@ def edit_profile():
 @app.route('/clear-chat/<username>', methods=['POST'])
 @login_required
 def clear_chat(username):
-    other_user = User.query.filter_by(username=username).first_or_404()
-    msgs = DirectMessage.query.filter(
-        or_((DirectMessage.sender_id == current_user.id) & (DirectMessage.receiver_id == other_user.id),
-            (DirectMessage.sender_id == other_user.id) & (DirectMessage.receiver_id == current_user.id))
-    ).all()
-    for m in msgs: db.session.delete(m)
-    db.session.commit()
-    return redirect(url_for('messages', tab='private'))
-
-# --- مسار الأدمن المحصّن بكاشف الأخطاء الشامل ---
-@app.route('/admin')
-@login_required
-def admin_panel():
-    try:
-        if not current_user.is_admin: 
-            abort(403)
-        return render_template('admin.html', users=User.query.all())
-    except Exception as e:
-        return f"<div dir='ltr' style='background:#111; color:#ff4444; padding:20px; font-family:monospace;'><h3>🚨 ADMIN PANEL ERROR:</h3><pre>{traceback.format_exc()}</pre></div>"
-
-@app.route('/admin/delete-user/<int:user_id>', methods=['POST'])
-@login_required
-def admin_delete_user(user_id):
-    if not current_user.is_admin: abort(403)
-    user = User.query.get_or_404(user_id)
-    db.session.delete(user)
-    db.session.commit()
-    return redirect(url_for('admin_panel'))
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
+    other_user = User.query.filter_by(username=username).first_or_404
