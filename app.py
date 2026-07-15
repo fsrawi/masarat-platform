@@ -31,7 +31,7 @@ def load_user(user_id):
 
 with app.app_context():
     try:
-        # أوقفنا المسح التلقائي عشان حساباتك ما تنمسح أبداً
+        # لن نمسح البيانات، فقط نبني الجداول الناقصة
         db.create_all() 
         fawzi_admin = User.query.filter(User.username.ilike('fawzi')).first()
         if fawzi_admin:
@@ -41,16 +41,23 @@ with app.app_context():
         print(f"⚠️ DATABASE ERROR: {db_err}")
 
 # =========================================================
-# 🛠️ المسار السري لتهيئة قاعدة البيانات (تدخل عليه مرة واحدة فقط)
+# 🛠️ المسارات السرية للإدارة وتهيئة النظام
 # =========================================================
 @app.route('/setup-database-fawzi-2026')
 def setup_database():
     try:
         db.drop_all()
         db.create_all()
-        return "<h1 style='color:green; text-align:center; margin-top:50px;'>تم مسح وبناء قاعدة البيانات بنجاح! ارجع للصفحة الرئيسية.</h1>"
+        return "<h1 style='color:green; text-align:center; margin-top:50px;'>✅ تم مسح وبناء قاعدة البيانات بنجاح!</h1>"
     except Exception as e:
         return f"<h1 style='color:red;'>خطأ: {e}</h1>"
+
+@app.route('/make-me-admin')
+@login_required
+def make_me_admin():
+    current_user.is_admin = True
+    db.session.commit()
+    return redirect(url_for('home'))
 
 def is_disposable_email(email):
     disposable_domains = ['mailinator.com', 'tempmail.com', 'yopmail.com']
@@ -87,7 +94,6 @@ def home():
         try: stories = Story.query.order_by(Story.created_at.desc()).all()
         except: stories = []
         
-        # قمنا بإضافة جميع الكلمات الخاصة بالتعليقات هنا ليختفي خطأ 500
         t = {
             'ar': {
                 'title': 'منصة نجاحي', 'brand': 'منصة نجاحي', 'create_story': 'أنشئ قصتك', 
@@ -257,23 +263,36 @@ def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
     return render_template('profile.html', user=user, stories=Story.query.filter_by(user_id=user.id).all(), is_blocked=False)
 
+# =========================================================
+# 🛠️ مسار تعديل البروفايل (تحديث خيارات الإيميل والرقم)
+# =========================================================
 @app.route('/edit-profile', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
     if request.method == 'POST':
-        pic = request.files.get('profile_pic')
-        if pic and pic.filename:
-            filename = secure_filename(pic.filename)
-            pic_name = f"{current_user.id}_{int(datetime.utcnow().timestamp())}_{filename}"
-            pic.save(os.path.join(app.config['UPLOAD_FOLDER'], pic_name))
-            current_user.profile_pic = pic_name
+        try:
+            pic = request.files.get('profile_pic')
+            if pic and pic.filename:
+                filename = secure_filename(pic.filename)
+                pic_name = f"{current_user.id}_{int(datetime.utcnow().timestamp())}_{filename}"
+                pic.save(os.path.join(app.config['UPLOAD_FOLDER'], pic_name))
+                current_user.profile_pic = pic_name
+                
+            current_user.bio = request.form.get('bio', '').strip()
+            current_user.phone = request.form.get('phone', '').strip()
+            current_user.country = request.form.get('country', '').strip()
+            current_user.city = request.form.get('city', '').strip()
             
-        current_user.bio = request.form.get('bio', '').strip()
-        current_user.phone = request.form.get('phone', '').strip()
-        current_user.country = request.form.get('country', '').strip()
-        current_user.city = request.form.get('city', '').strip()
-        db.session.commit()
-        return redirect(url_for('profile', username=current_user.username))
+            # تحديث خيارات الخصوصية لإظهار الإيميل والرقم
+            current_user.show_email = 'show_email' in request.form
+            current_user.show_phone = 'show_phone' in request.form
+            
+            db.session.commit()
+            flash('تم التحديث بنجاح!', 'success')
+            return redirect(url_for('profile', username=current_user.username))
+        except Exception as e:
+            return f"<h3 style='color:red;'>خطأ أثناء الحفظ: {e}</h3>"
+            
     return render_template('edit_profile.html')
 
 @app.route('/clear-chat/<username>', methods=['POST'])
