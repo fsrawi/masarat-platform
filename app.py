@@ -74,8 +74,8 @@ def home():
     except: stories = []
     
     t = {
-        'ar': {'title': 'منصة نجاحي', 'brand': 'منصة نجاحي', 'create_story': 'أنشئ قصتك', 'messages': 'الرسائل', 'profile': 'ملفي', 'logout': 'خروج', 'login': 'دخول', 'register': 'حساب جديد', 'main_heading': 'مسارات وتجارب ملهمة', 'no_stories': 'لا توجد قصص بعد.'},
-        'en': {'title': 'My Success', 'brand': 'My Success', 'create_story': 'Create Story', 'messages': 'Messages', 'profile': 'Profile', 'logout': 'Logout', 'login': 'Login', 'register': 'Register', 'main_heading': 'Inspiring Paths', 'no_stories': 'No stories yet.'}
+        'ar': {'title': 'منصة نجاحي', 'brand': 'منصة نجاحي', 'create_story': 'أنشئ قصتك', 'messages': 'الرسائل', 'profile': 'ملفي', 'logout': 'خروج', 'login': 'دخول', 'register': 'حساب جديد', 'main_heading': 'مسارات وتجارب ملهمة', 'no_stories': 'لا توجد قصص بعد.', 'published_by': 'بواسطة:', 'challenge': 'التحدي', 'turning_point': 'التحول', 'outcome': 'النتيجة'},
+        'en': {'title': 'My Success', 'brand': 'My Success', 'create_story': 'Create Story', 'messages': 'Messages', 'profile': 'Profile', 'logout': 'Logout', 'login': 'Login', 'register': 'Register', 'main_heading': 'Inspiring Paths', 'no_stories': 'No stories yet.', 'published_by': 'By:', 'challenge': 'Challenge', 'turning_point': 'Turning Point', 'outcome': 'Outcome'}
     }[session.get('lang', 'ar')]
     
     return render_template('home.html', stories=stories, show_welcome=not current_user.is_authenticated, t=t)
@@ -141,7 +141,6 @@ def add_story():
         return redirect(url_for('home'))
     return render_template('add_story.html')
 
-# --- التفاعل مع القصص ---
 @app.route('/story/<int:story_id>/like', methods=['POST'])
 @login_required
 def like_story(story_id):
@@ -162,7 +161,6 @@ def add_comment(story_id):
         db.session.commit()
     return redirect(request.referrer or url_for('home'))
 
-# --- الشات المحسن ---
 @app.route('/messages', methods=['GET', 'POST'])
 @login_required
 def messages():
@@ -187,7 +185,6 @@ def messages():
                 db.session.commit()
                 return redirect(url_for('messages', tab='groups', group_id=group.id))
 
-    # تحديد الرسائل كمقروءة
     if chatting_with:
         other = User.query.filter_by(username=chatting_with).first()
         if other:
@@ -196,4 +193,88 @@ def messages():
             db.session.commit()
             private_msgs = DirectMessage.query.filter(
                 or_((DirectMessage.sender_id == current_user.id) & (DirectMessage.receiver_id == other.id),
-                    (DirectMessage.sender_id == other.id) & (DirectMessage.receiver_
+                    (DirectMessage.sender_id == other.id) & (DirectMessage.receiver_id == current_user.id))
+            ).order_by(DirectMessage.created_at.asc()).all()
+        else: private_msgs = []
+    else: private_msgs = []
+
+    group_msgs = GroupMessage.query.filter_by(group_id=selected_group_id).order_by(GroupMessage.created_at.asc()).all() if selected_group_id else []
+    
+    return render_template('messages.html', 
+                           all_users=User.query.filter(User.id != current_user.id).all(), 
+                           my_groups=current_user.chat_groups.all(), 
+                           private_messages=private_msgs, 
+                           group_messages=group_msgs, 
+                           active_tab=active_tab, 
+                           chatting_with=chatting_with, 
+                           selected_group_id=selected_group_id)
+
+@app.route('/create-group', methods=['POST'])
+@login_required
+def create_group():
+    group_name = request.form.get('group_name').strip()
+    if group_name and not Group.query.filter_by(name=group_name).first():
+        new_group = Group(name=group_name, created_by=current_user.id)
+        new_group.members.append(current_user)
+        db.session.add(new_group)
+        db.session.commit()
+    return redirect(url_for('messages', tab='groups'))
+
+@app.route('/profile/<username>')
+@login_required
+def profile(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    return render_template('profile.html', user=user, stories=Story.query.filter_by(user_id=user.id).all(), is_blocked=False)
+
+@app.route('/edit-profile', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    if request.method == 'POST':
+        pic = request.files.get('profile_pic')
+        if pic and pic.filename:
+            filename = secure_filename(pic.filename)
+            pic_name = f"{current_user.id}_{int(datetime.utcnow().timestamp())}_{filename}"
+            pic.save(os.path.join(app.config['UPLOAD_FOLDER'], pic_name))
+            current_user.profile_pic = pic_name
+            
+        current_user.bio = request.form.get('bio', '').strip()
+        current_user.phone = request.form.get('phone', '').strip()
+        current_user.country = request.form.get('country', '').strip()
+        current_user.city = request.form.get('city', '').strip()
+        
+        if current_user.occupation_type == 'student':
+            current_user.university_name = request.form.get('university_name', '').strip()
+        else:
+            current_user.company_name = request.form.get('company_name', '').strip()
+            
+        db.session.commit()
+        flash('تم التحديث بنجاح!', 'success')
+        return redirect(url_for('profile', username=current_user.username))
+        
+    return render_template('edit_profile.html')
+
+@app.route('/clear-chat/<username>', methods=['POST'])
+@login_required
+def clear_chat(username):
+    other_user = User.query.filter_by(username=username).first_or_404()
+    messages_to_delete = DirectMessage.query.filter(
+        or_(
+            (DirectMessage.sender_id == current_user.id) & (DirectMessage.receiver_id == other_user.id),
+            (DirectMessage.sender_id == other_user.id) & (DirectMessage.receiver_id == current_user.id)
+        )
+    ).all()
+    for msg in messages_to_delete:
+        db.session.delete(msg)
+    db.session.commit()
+    return redirect(url_for('messages', tab='private'))
+
+@app.route('/block/<int:user_id>', methods=['POST'])
+@login_required
+def block_user(user_id):
+    if current_user.id != user_id and not Block.query.filter_by(blocker_id=current_user.id, blocked_id=user_id).first():
+        db.session.add(Block(blocker_id=current_user.id, blocked_id=user_id))
+        db.session.commit()
+    return redirect(request.referrer or url_for('home'))
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
