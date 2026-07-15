@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة مسارات - قصص ملهمة</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8fafc; font-family: sans-serif; }
+        .navbar { background-color: #1a365d; }
+        .navbar-brand, .nav-link { color: #fff !important; }
+        .story-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-right: 5px solid #2b6cb0; margin-bottom: 30px; padding: 25px; }
+        .comment-section { background-color: #f1f5f9; border-radius: 8px; padding: 15px; margin-top: 15px; }
+        .comment-box { border-bottom: 1px solid #e2e8f0; padding: 8px 0; }
+        .comment-box:last-child { border-bottom: none; }
+    </style>
+</head>
+<body>
+
+    <!-- شريط التنقل العلوي (يتحقق من حالة تسجيل الدخول) -->
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ url_for('home') }}">منصة مسارات</a>
+            <div class="navbar-nav ms-auto">
+                {% if current_user.is_authenticated %}
+                    <span class="nav-link text-warning me-3">مرحباً، {{ current_user.username }} 👋</span>
+                    <a class="nav-link btn btn-outline-light btn-sm px-3 me-2" href="{{ url_for('add_story') }}">أنشئ قصتك</a>
+                    <a class="nav-link btn btn-outline-info btn-sm px-3 me-2" href="{{ url_for('messages') }}">الرسائل الخاصة</a>
+                    <a class="nav-link btn btn-danger btn-sm px-3" href="{{ url_for('logout') }}">خروج</a>
+                {% else %}
+                    <a class="nav-link btn btn-primary btn-sm px-3 me-2" href="{{ url_for('login') }}">تسجيل الدخول</a>
+                    <a class="nav-link btn btn-outline-light btn-sm px-3" href="{{ url_for('register') }}">إنشاء حساب</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- عرض التنبيهات -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} text-center" role="alert">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <h1 class="text-center my-4 text-primary fw-bold">قصص ملهمة في مواجهة التحديات</h1>
+
+        <div class="row justify-content-center">
+            <div class="col-md-9">
+                <!-- التحقق من وجود قصص لعرضها -->
+                {% if stories %}
+                    {% for story in stories %}
+                        <div class="story-card">
+                            <h3 class="text-primary fw-bold mb-3">{{ story.title }}</h3>
+                            <p class="text-muted small">نُشرت بواسطة: <strong>{{ story.author.username }}</strong> في {{ story.created_at.strftime('%Y-%m-%d') }}</p>
+                            <hr>
+                            
+                            <div class="mb-3">
+                                <strong class="text-danger">مرحلة الصعوبة والتحدي:</strong>
+                                <p class="mt-1">{{ story.challenge }}</p>
+                            </div>
+
+                            <div class="mb-3">
+                                <strong class="text-success">نقطة التحول والنجاح:</strong>
+                                <p class="mt-1">{{ story.turning_point }}</p>
+                            </div>
+
+                            <div class="mb-3">
+                                <strong class="text-dark">النتيجة الحالية والدروس:</strong>
+                                <p class="mt-1">{{ story.outcome }}</p>
+                            </div>
+
+                            <!-- قسم التعليقات -->
+                            <div class="comment-section">
+                                <h5 class="fw-bold mb-3">التعليقات ({{ story.comments|length }})</h5>
+                                
+                                {% if story.comments %}
+                                    {% for comment in story.comments %}
+                                        <div class="comment-box">
+                                            <strong>{{ comment.author.username }}:</strong>
+                                            <span class="text-dark">{{ comment.content }}</span>
+                                            <span class="text-muted float-start" style="font-size: 0.8rem;">{{ comment.created_at.strftime('%m-%d %H:%M') }}</span>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted small mb-0">لا توجد تعليقات بعد. كن أول من يعلق!</p>
+                                {% endif %}
+
+                                <!-- نموذج إضافة تعليق للمستخدمين المسجلين فقط -->
+                                {% if current_user.is_authenticated %}
+                                    <form action="{{ url_for('add_comment', story_id=story.id) }}" method="POST" class="mt-3 d-flex">
+                                        <input type="text" name="content" class="form-control me-2" placeholder="اكتب تعليقاً مشجعاً..." required autocomplete="off">
+                                        <button type="submit" class="btn btn-primary btn-sm px-3">تعليق</button>
+                                    </form>
+                                {% else %}
+                                    <p class="text-center mt-3 mb-0 small"><a href="{{ url_for('login') }}">سجل دخولك</a> لتستطيع ترك تعليق أو التفاعل مع القصة.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info text-center">لا توجد قصص منشورة بعد، كن أول من ينشر قصة نجاحه!</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
