@@ -1,78 +1,68 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
-from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
 group_members = db.Table('group_members',
-    db.Column('user_id', db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
-    db.Column('group_id', db.Integer, db.ForeignKey('groups.id', ondelete='CASCADE'), primary_key=True)
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
+    db.Column('group_id', db.Integer, db.ForeignKey('groups.id'))
 )
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
-    
-    phone = db.Column(db.String(20), nullable=True)
-    birth_date = db.Column(db.Date, nullable=False)
-    country = db.Column(db.String(50), nullable=True)
-    city = db.Column(db.String(50), nullable=True)
-    
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+    phone = db.Column(db.String(20))
+    birth_date = db.Column(db.Date)
+    country = db.Column(db.String(50))
+    city = db.Column(db.String(50))
     occupation_type = db.Column(db.String(20), default='student')
-    university_name = db.Column(db.String(100), nullable=True)
-    company_name = db.Column(db.String(100), nullable=True)
-    
+    university_name = db.Column(db.String(100))
+    company_name = db.Column(db.String(100))
+    profile_pic = db.Column(db.String(255))
+    bio = db.Column(db.Text)
     show_email = db.Column(db.Boolean, default=False)
     show_phone = db.Column(db.Boolean, default=False)
-    show_academic = db.Column(db.Boolean, default=True)
-    
     is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # --- الإضافات الجديدة للهوية الشخصية ---
-    profile_pic = db.Column(db.String(255), nullable=True)
-    bio = db.Column(db.Text, nullable=True)
-    
-    stories = db.relationship('Story', backref='author', lazy=True, cascade="all, delete-orphan")
-    comments = db.relationship('Comment', backref='author', lazy=True, cascade="all, delete-orphan")
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
-
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
 class Story(db.Model):
     __tablename__ = 'stories'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    title = db.Column(db.String(150), nullable=False)
-    challenge = db.Column(db.Text, nullable=False)
-    turning_point = db.Column(db.Text, nullable=False)
-    outcome = db.Column(db.Text, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    title = db.Column(db.String(100))
+    challenge = db.Column(db.Text)
+    turning_point = db.Column(db.Text)
+    outcome = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    comments = db.relationship('Comment', backref='story', lazy=True, cascade="all, delete-orphan")
-    likes = db.relationship('Like', backref='story', lazy=True, cascade="all, delete-orphan")
+    author = db.relationship('User', backref='stories')
 
 class Comment(db.Model):
     __tablename__ = 'comments'
     id = db.Column(db.Integer, primary_key=True)
-    story_id = db.Column(db.Integer, db.ForeignKey('stories.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    story_id = db.Column(db.Integer, db.ForeignKey('stories.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    author = db.relationship('User', backref='comments')
+    story = db.relationship('Story', backref=db.backref('comments', lazy=True))
 
 class DirectMessage(db.Model):
     __tablename__ = 'direct_messages'
     id = db.Column(db.Integer, primary_key=True)
-    sender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    receiver_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    message_text = db.Column(db.Text, nullable=True)
-    voice_file = db.Column(db.String(255), nullable=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    receiver_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    message_text = db.Column(db.Text)
+    voice_file = db.Column(db.String(255))
     is_voice = db.Column(db.Boolean, default=False)
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -82,45 +72,40 @@ class DirectMessage(db.Model):
 class Group(db.Model):
     __tablename__ = 'groups'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), unique=True, nullable=False)
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     members = db.relationship('User', secondary=group_members, backref=db.backref('chat_groups', lazy='dynamic'))
-    messages = db.relationship('GroupMessage', backref='group', lazy=True, cascade="all, delete-orphan")
 
 class GroupMessage(db.Model):
     __tablename__ = 'group_messages'
     id = db.Column(db.Integer, primary_key=True)
-    group_id = db.Column(db.Integer, db.ForeignKey('groups.id', ondelete='CASCADE'), nullable=False)
-    sender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    message_text = db.Column(db.Text, nullable=True)
-    voice_file = db.Column(db.String(255), nullable=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))
+    sender_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    message_text = db.Column(db.Text)
+    voice_file = db.Column(db.String(255))
     is_voice = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     sender = db.relationship('User', backref='group_messages')
+    group = db.relationship('Group', backref='messages')
 
 class Like(db.Model):
     __tablename__ = 'likes'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    story_id = db.Column(db.Integer, db.ForeignKey('stories.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    story_id = db.Column(db.Integer, db.ForeignKey('stories.id'))
+    story = db.relationship('Story', backref=db.backref('likes', lazy=True))
 
 class Block(db.Model):
     __tablename__ = 'blocks'
     id = db.Column(db.Integer, primary_key=True)
-    blocker_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
-    blocked_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    blocker_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    blocked_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
 class Report(db.Model):
     __tablename__ = 'reports'
     id = db.Column(db.Integer, primary_key=True)
-    reporter_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
-    reported_user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=True)
-    story_id = db.Column(db.Integer, db.ForeignKey('stories.id', ondelete='CASCADE'), nullable=True)
-    reason = db.Column(db.Text, nullable=False)
-    status = db.Column(db.String(20), default='pending')
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    reported_id = db.Column(db.Integer)
+    reason = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    reporter = db.relationship('User', foreign_keys=[reporter_id], backref='submitted_reports')
-    reported_user = db.relationship('User', foreign_keys=[reported_user_id], backref='received_reports')

@@ -35,6 +35,7 @@ with app.app_context():
     except Exception as db_err:
         print(f"⚠️ DATABASE ERROR: {db_err}")
 
+# حماية الحساب الجذري لفوزي
 @app.before_request
 def auto_admin():
     try:
@@ -327,6 +328,16 @@ def clear_chat(username):
     db.session.commit()
     return redirect(url_for('messages', tab='private'))
 
+# مسار التهيئة لحل المشاكل بالكامل
+@app.route('/setup-database-fawzi-2026')
+def setup_database():
+    try:
+        db.drop_all()
+        db.create_all()
+        return "<h1 style='color:green; text-align:center; margin-top:50px;'>✅ تم تحديث وتهيئة قاعدة البيانات بنجاح! عد للرئيسية الآن.</h1>"
+    except Exception as e:
+        return f"<h1 style='color:red;'>خطأ: {e}</h1>"
+
 @app.route('/admin')
 @login_required
 def admin_panel():
@@ -348,7 +359,6 @@ def admin_delete_user(user_id):
     db.session.commit()
     return redirect(url_for('admin_panel'))
 
-# --- المسار الجديد لتبديل وتعديل الصلاحيات للأدمن الآخرين ---
 @app.route('/admin/toggle-admin/<int:user_id>', methods=['POST'])
 @login_required
 def admin_toggle_admin(user_id):
@@ -356,18 +366,12 @@ def admin_toggle_admin(user_id):
         abort(403)
     user = User.query.get_or_404(user_id)
     
-    # جدار حماية لمنع عزل حساب فوزي الأساسي أو عزل حسابك الحالي بنفسك
-    if user.username.lower() == 'fawzi':
-        flash('خطأ حماية: لا يمكن التعديل على الحساب الجذري للمنصة.', 'danger')
-        return redirect(url_for('admin_panel'))
-        
-    if user.id == current_user.id:
-        flash('خطأ حماية: لا يمكنك عزل نفسك بنفسك.', 'danger')
+    if user.username.lower() == 'fawzi' or user.id == current_user.id:
+        flash('خطأ: لا يمكن المساس بصلاحيات الحساب الجذري.', 'danger')
         return redirect(url_for('admin_panel'))
         
     user.is_admin = not user.is_admin
     db.session.commit()
-    flash(f'تم تحديث صلاحيات {user.username} بنجاح.', 'success')
     return redirect(url_for('admin_panel'))
 
 if __name__ == '__main__':
