@@ -30,8 +30,8 @@ def load_user(user_id):
 
 with app.app_context():
     try:
-        # تم إيقاف المسح للحفاظ على بياناتك
-        # db.drop_all() 
+        # تفعيل المسح لمرة واحدة فقط لإنشاء أعمدة الصورة والنبذة الجديدة
+        db.drop_all() 
         db.create_all() 
         fawzi_admin = User.query.filter_by(username='fawzi').first()
         if fawzi_admin:
