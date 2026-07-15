@@ -8,7 +8,14 @@ app = Flask(__name__)
 
 # إعدادات الحماية والـ Session
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Fawzi_Secure_DevSecOps_Key_2026')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///masarat.db'
+
+# --- الاتصال الذكي بقاعدة البيانات لضمان الحفظ الدائم للأبد ---
+# يقرأ الرابط من البيئة السحابية (PostgreSQL)، وإذا لم يجده يستعين بـ SQLite محلياً
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///masarat.db')
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
@@ -47,15 +54,13 @@ def toggle_lang():
     return redirect(request.referrer or url_for('home'))
 
 
-# --- 1. المسار الرئيسي (عرض القصص والتعليقات ديناميكياً) ---
+# --- 1. المسار الرئيسي (عرض القصص والتعليقات ديناميكياً بالهوية الجديدة) ---
 @app.route('/')
 def home():
     stories = Story.query.order_by(Story.created_at.desc()).all()
-    
-    # لغة العرض الحالية
     lang = session.get('lang', 'ar')
     
-    # مصفوفة الترجمة الثابتة للعناصر الأساسية بالواجهة بالاسم الجديد "منصة نجاحي هو نجاحك"
+    # مصفوفة الترجمة بالاسم الجديد الفخم "منصة نجاحي هو نجاحك"
     translations = {
         'ar': {
             'title': 'منصة نجاحي هو نجاحك - قصص ملهمة',
@@ -260,6 +265,5 @@ def messages():
 
 # --- التشغيل البرمجي وتحديد المنفذ (Port Binding) ديناميكياً لـ Render ---
 if __name__ == '__main__':
-    # جلب المنفذ ديناميكياً من خادم Render، وإن لم يكن متوفراً يتم التعيين افتراضياً على 10000
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port)
