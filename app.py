@@ -31,8 +31,7 @@ def load_user(user_id):
 
 with app.app_context():
     try:
-        # قفلنا المسح للحفاظ على الحسابات
-        # db.drop_all() 
+        # أوقفنا المسح التلقائي عشان حساباتك ما تنمسح أبداً
         db.create_all() 
         fawzi_admin = User.query.filter(User.username.ilike('fawzi')).first()
         if fawzi_admin:
@@ -40,6 +39,18 @@ with app.app_context():
             db.session.commit()
     except Exception as db_err:
         print(f"⚠️ DATABASE ERROR: {db_err}")
+
+# =========================================================
+# 🛠️ المسار السري لتهيئة قاعدة البيانات (تدخل عليه مرة واحدة فقط)
+# =========================================================
+@app.route('/setup-database-fawzi-2026')
+def setup_database():
+    try:
+        db.drop_all()
+        db.create_all()
+        return "<h1 style='color:green; text-align:center; margin-top:50px;'>تم مسح وبناء قاعدة البيانات بنجاح! ارجع للصفحة الرئيسية.</h1>"
+    except Exception as e:
+        return f"<h1 style='color:red;'>خطأ: {e}</h1>"
 
 def is_disposable_email(email):
     disposable_domains = ['mailinator.com', 'tempmail.com', 'yopmail.com']
@@ -76,6 +87,7 @@ def home():
         try: stories = Story.query.order_by(Story.created_at.desc()).all()
         except: stories = []
         
+        # قمنا بإضافة جميع الكلمات الخاصة بالتعليقات هنا ليختفي خطأ 500
         t = {
             'ar': {
                 'title': 'منصة نجاحي', 'brand': 'منصة نجاحي', 'create_story': 'أنشئ قصتك', 
