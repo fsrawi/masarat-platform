@@ -29,19 +29,20 @@ login_manager.init_app(app)
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# بناء وتحديث الجداول تلقائياً عند إقلاع السيرفر وتخطي تعارض الأعمدة
+# بناء وتحديث الجداول بأمان تام دون التسبب في انهيار السيرفر (Error 500)
 with app.app_context():
     try:
-        db.drop_all()  # شطب الهياكل القديمة المتعارضة
-        db.create_all()  # إنشاء الهيكل الجديد المطور بالكامل
+        # ملاحظة: إذا أردت تصفير البيانات كلياً لتطبيق الأعمدة الجديدة، قم بتفعيل السطر التالي لمرة واحدة فقط ثم احذفه
+        # db.drop_all() 
+        db.create_all()
         
         # جعل حسابك الافتراضي (fawzi) أدمن تلقائياً إن وجد
         fawzi_admin = User.query.filter_by(username='fawzi').first()
         if fawzi_admin:
             fawzi_admin.is_admin = True
             db.session.commit()
-    except Exception as e:
-        print(f"Database setup info: {e}")
+    except Exception as db_err:
+        print(f"⚠️ DATABASE INITIALIZATION ERROR: {db_err}")
 
 # التحقق من الإيميلات الوهمية
 def is_disposable_email(email):
@@ -61,8 +62,12 @@ def inject_global_vars():
     has_unread = False
     is_underage = False
     if current_user.is_authenticated:
-        unread_count = DirectMessage.query.filter_by(receiver_id=current_user.id, is_read=False).count()
-        has_unread = unread_count > 0
+        try:
+            unread_count = DirectMessage.query.filter_by(receiver_id=current_user.id, is_read=False).count()
+            has_unread = unread_count > 0
+        except:
+            has_unread = False
+            
         if current_user.birth_date:
             is_underage = calculate_age(current_user.birth_date) < 18
             
@@ -75,14 +80,67 @@ def toggle_lang():
     session['lang'] = 'en' if old_lang == 'ar' else 'ar'
     return redirect(request.referrer or url_for('home'))
 
-# --- 1. المسار الرئيسي (عرض القصص مع شاشة ترحيبية) ---
+# --- 1. المسار الرئيسي (تم حل مشكلة الترجمة t) ---
 @app.route('/')
 def home():
-    stories = Story.query.order_by(Story.created_at.desc()).all()
+    try:
+        stories = Story.query.order_by(Story.created_at.desc()).all()
+    except Exception as e:
+        stories = []
+        print(f"Query error: {e}")
+        
+    lang = session.get('lang', 'ar')
+    
+    translations = {
+        'ar': {
+            'title': 'منصة نجاحي هو نجاحك - قصص ملهمة',
+            'brand': 'منصة نجاحي هو نجاحك',
+            'welcome': 'مرحباً،',
+            'create_story': 'أنشئ قصتك',
+            'messages': 'الرسائل الخاصة',
+            'logout': 'خروج',
+            'login': 'تسجيل الدخول',
+            'register': 'إنشاء حساب',
+            'main_heading': 'قصص ملهمة في مواجهة التحديات',
+            'no_stories': 'لا توجد قصص منشورة بعد، كن أول من ينشر قصة نجاحه!',
+            'published_by': 'نُشرت بواسطة:',
+            'challenge': 'مرحلة الصعوبة والتحدي',
+            'turning_point': 'نقطة التحول والنجاح',
+            'outcome': 'النتيجة الحالية والدروس',
+            'comments': 'التعليقات',
+            'no_comments': 'لا توجد تعليقات بعد. كن أول من يعلق!',
+            'add_comment_placeholder': 'اكتب تعليقاً مشجعاً...',
+            'comment_btn': 'تعليق',
+            'login_to_comment': 'سجل دخولك لتستطيع التفاعل وكتابة تعليق.'
+        },
+        'en': {
+            'title': 'My Success is Your Success - Inspiring Stories',
+            'brand': 'My Success is Your Success',
+            'welcome': 'Welcome,',
+            'create_story': 'Create Story',
+            'messages': 'Direct Messages',
+            'logout': 'Logout',
+            'login': 'Login',
+            'register': 'Register',
+            'main_heading': 'Inspiring Stories in the Face of Challenges',
+            'no_stories': 'No stories published yet. Be the first to share your success!',
+            'published_by': 'Published by:',
+            'challenge': 'Difficulty & Challenge Stage',
+            'turning_point': 'The Turning Point & Success',
+            'outcome': 'Current Outcome & Lessons',
+            'comments': 'Comments',
+            'no_comments': 'No comments yet. Be the first to comment!',
+            'add_comment_placeholder': 'Write an encouraging comment...',
+            'comment_btn': 'Comment',
+            'login_to_comment': 'Log in to interact and leave a comment.'
+        }
+    }
+    
+    t = translations[lang]
     show_welcome = not current_user.is_authenticated
-    return render_template('home.html', stories=stories, show_welcome=show_welcome)
+    return render_template('home.html', stories=stories, show_welcome=show_welcome, t=t)
 
-# --- 2. التسجيل والتحقق من الهوية (بمنع الإيميلات الوهمية والتحقق من السن) ---
+# --- 2. التسجيل والتحقق من الهوية ---
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
@@ -160,7 +218,7 @@ def logout():
     flash('تم تسجيل الخروج بنجاح وتأمين جلستك.', 'info')
     return redirect(url_for('home'))
 
-# --- 3. كتابة قصة (منع النشر لمن هم دون 18 سنة) ---
+# --- 3. كتابة قصة ---
 @app.route('/add-story', methods=['GET', 'POST'])
 @login_required
 def add_story():
@@ -185,7 +243,7 @@ def add_story():
         
     return render_template('add_story.html')
 
-# --- 4. الشات والمراسلات المتقدمة مع خيارات المسح والحظر ---
+# --- 4. الشات والمراسلات المتقدمة ---
 @app.route('/messages', methods=['GET', 'POST'])
 @login_required
 def messages():
@@ -262,7 +320,7 @@ def messages():
                            active_tab=active_tab, chatting_with=chatting_with_username,
                            selected_group_id=selected_group_id)
 
-# --- 5. مسار مسح محادثة بالكامل (Clear Conversation) ---
+# --- 5. مسار مسح محادثة بالكامل ---
 @app.route('/clear-chat/<username>', methods=['POST'])
 @login_required
 def clear_chat(username):
@@ -279,16 +337,20 @@ def clear_chat(username):
     flash('تم مسح سجل المحادثة بالكامل بنجاح.', 'success')
     return redirect(url_for('messages', tab='private'))
 
-# --- 6. الملف الشخصي العام للمستخدم (UserProfile) ---
+# --- 6. الملف الشخصي العام للمستخدم ---
 @app.route('/profile/<username>')
 @login_required
 def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
     user_stories = Story.query.filter_by(user_id=user.id).all()
-    is_blocked = Block.query.filter_by(blocker_id=current_user.id, blocked_id=user.id).first() is not None
+    
+    is_blocked = False
+    if current_user.is_authenticated:
+        is_blocked = Block.query.filter_by(blocker_id=current_user.id, blocked_id=user.id).first() is not None
+        
     return render_template('profile.html', user=user, stories=user_stories, is_blocked=is_blocked)
 
-# --- 7. نظام الحظر وفك الحظر بين الأعضاء ---
+# --- 7. نظام الحظر وفك الحظر ---
 @app.route('/block/<int:user_id>', methods=['POST'])
 @login_required
 def block_user(user_id):
@@ -302,7 +364,7 @@ def block_user(user_id):
         db.session.add(new_block)
         db.session.commit()
         flash('تم حظر الحساب بنجاح وتأمين خصوصيتك.', 'success')
-    return redirect(url_for('home'))
+    return redirect(request.referrer or url_for('home'))
 
 @app.route('/unblock/<int:user_id>', methods=['POST'])
 @login_required
@@ -312,9 +374,9 @@ def unblock_user(user_id):
         db.session.delete(block)
         db.session.commit()
         flash('تم فك الحظر بنجاح ويمكنكم التواصل الآن.', 'success')
-    return redirect(url_for('home'))
+    return redirect(request.referrer or url_for('home'))
 
-# --- 8. تقديم البلاغات (Report System) ---
+# --- 8. تقديم البلاغات ---
 @app.route('/report', methods=['POST'])
 @login_required
 def submit_report():
@@ -330,10 +392,10 @@ def submit_report():
     )
     db.session.add(new_report)
     db.session.commit()
-    flash('تم رفع البلاغ بنجاح للجنة الإشراف، وسنتعامل معه بسرية تامة لحماية خصوصيتك.', 'success')
+    flash('تم رفع البلاغ بنجاح للجنة الإشراف، وسنتعامل معه بسرية تامة.', 'success')
     return redirect(request.referrer or url_for('home'))
 
-# --- 9. لوحة تحكم الإشراف والأدمن للأمن والنزاهة ---
+# --- 9. لوحة تحكم الإشراف للأدمن ---
 @app.route('/admin')
 @login_required
 def admin_panel():
