@@ -5,8 +5,8 @@ from datetime import datetime
 
 db = SQLAlchemy()
 
-# 1. جدول المستخدمين (حماية كاملة بكلمات مرور مشفرة)
-class User(db.Model, UserMixin):
+# 1. جدول المستخدمين
+class User(UserMixin, db.Model):
     __tablename__ = 'users'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -14,16 +14,16 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # العلاقات
+    stories = db.relationship('Story', backref='author', lazy=True, cascade="all, delete-orphan")
+    comments = db.relationship('Comment', backref='author', lazy=True, cascade="all, delete-orphan")
+    sent_messages = db.relationship('DirectMessage', foreign_keys='DirectMessage.sender_id', backref='sender', lazy=True)
+    received_messages = db.relationship('DirectMessage', foreign_keys='DirectMessage.receiver_id', backref='receiver', lazy=True)
 
-    # علاقات لربط المستخدم بالقصص والتعليقات والرسائل
-    stories = db.relationship('Story', backref='author', lazy=True)
-    comments = db.relationship('Comment', backref='author', lazy=True)
-
-    # دالة لتشفير كلمة المرور قبل حفظها
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
-    # دالة للتحقق من كلمة المرور عند تسجيل الدخول
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
@@ -38,11 +38,12 @@ class Story(db.Model):
     turning_point = db.Column(db.Text, nullable=False)
     outcome = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    likes = db.relationship('Like', backref='story', lazy=True, cascade="all, delete-orphan")
     
+    # العلاقات
     comments = db.relationship('Comment', backref='story', lazy=True, cascade="all, delete-orphan")
+    likes = db.relationship('Like', backref='story', lazy=True, cascade="all, delete-orphan")
 
-# 3. جدول التعليقات (مع حماية برمجية لربطها بالقصة وصاحبها)
+# 3. جدول التعليقات
 class Comment(db.Model):
     __tablename__ = 'comments'
     
@@ -52,7 +53,7 @@ class Comment(db.Model):
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# 4. جدول الرسائل الخاصة والمباشرة (DMs) بين المستخدمين
+# 4. جدول الرسائل الخاصة
 class DirectMessage(db.Model):
     __tablename__ = 'direct_messages'
     
@@ -63,11 +64,7 @@ class DirectMessage(db.Model):
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # تعريف العلاقات البرمجية للمرسل والمستقبل
-    sender = db.relationship('User', foreign_keys=[sender_id], backref=db.backref('sent_messages', lazy=True))
-    receiver = db.relationship('User', foreign_keys=[receiver_id], backref=db.backref('received_messages', lazy=True))
-
-    # 5. جدول الإعجابات (Likes) لمنع تكرار الإعجاب من نفس المستخدم
+# 5. جدول الإعجابات
 class Like(db.Model):
     __tablename__ = 'likes'
     
@@ -76,5 +73,4 @@ class Like(db.Model):
     story_id = db.Column(db.Integer, db.ForeignKey('stories.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # لضمان عدم تكرار الإعجاب
     __table_args__ = (db.UniqueConstraint('user_id', 'story_id', name='unique_user_story_like'),)
