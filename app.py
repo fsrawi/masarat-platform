@@ -1,4 +1,5 @@
 import os
+import traceback
 from datetime import datetime, date
 from flask import Flask, render_template, redirect, url_for, request, flash, session, abort
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -7,13 +8,11 @@ from models import db, User, Story, Comment, DirectMessage, Like, Group, GroupMe
 from sqlalchemy import or_
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Fawzi_Secure_Key_2026')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Fawzi_Secure_DevSecOps_Key_2026')
 
-# مجلد رفع الصور
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# رابط قاعدة البيانات
 database_url = "postgresql://masarat_db_new_user:CedqCPmLtuiZKC4en8nYcguEZr33CAdP@dpg-d9bu85mcjfls739n0di0-a/masarat_db_new"
 if database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
@@ -32,19 +31,21 @@ def load_user(user_id):
 
 with app.app_context():
     try:
-        # إنشاء الجداول فقط دون مسحها لكي لا تفقد حسابك أبداً
+        # فحص تلقائي لإنشاء الجداول الناقصة دون مسح البيانات
         db.create_all() 
     except Exception as db_err:
         print(f"⚠️ DATABASE ERROR: {db_err}")
 
-# مسار لجعل حسابك أدمن فوراً عند الدخول عليه
-@app.route('/make-me-admin')
-@login_required
-def make_me_admin():
-    current_user.is_admin = True
-    db.session.commit()
-    flash('تم تفعيل صلاحية الأدمن لك بنجاح!', 'success')
-    return redirect(url_for('home'))
+# تفعيل صلاحية الأدمن تلقائياً لحسابك fawzi
+@app.before_request
+def auto_admin():
+    try:
+        if current_user.is_authenticated and current_user.username.lower() == 'fawzi':
+            if not current_user.is_admin:
+                current_user.is_admin = True
+                db.session.commit()
+    except:
+        pass
 
 def is_disposable_email(email):
     disposable_domains = ['mailinator.com', 'tempmail.com', 'yopmail.com']
@@ -77,31 +78,34 @@ def toggle_lang():
 
 @app.route('/')
 def home():
-    try: stories = Story.query.order_by(Story.created_at.desc()).all()
-    except: stories = []
-    
-    t = {
-        'ar': {
-            'title': 'منصة نجاحي', 'brand': 'منصة نجاحي', 'create_story': 'أنشئ قصتك', 
-            'messages': 'الرسائل', 'profile': 'ملفي', 'logout': 'خروج', 'login': 'دخول', 
-            'register': 'حساب جديد', 'main_heading': 'مسارات وتجارب ملهمة', 
-            'no_stories': 'لا توجد قصص بعد.', 'published_by': 'بواسطة:', 
-            'challenge': 'التحدي', 'turning_point': 'التحول', 'outcome': 'النتيجة',
-            'comments': 'التعليقات', 'add_comment_placeholder': 'اكتب تعليقاً...', 
-            'comment_btn': 'إرسال', 'no_comments': 'لا توجد تعليقات'
-        },
-        'en': {
-            'title': 'My Success', 'brand': 'My Success', 'create_story': 'Create Story', 
-            'messages': 'Messages', 'profile': 'Profile', 'logout': 'Logout', 
-            'login': 'Login', 'register': 'Register', 'main_heading': 'Inspiring Paths', 
-            'no_stories': 'No stories yet.', 'published_by': 'By:', 
-            'challenge': 'Challenge', 'turning_point': 'Turning Point', 'outcome': 'Outcome',
-            'comments': 'Comments', 'add_comment_placeholder': 'Write a comment...', 
-            'comment_btn': 'Send', 'no_comments': 'No comments'
-        }
-    }[session.get('lang', 'ar')]
-    
-    return render_template('home.html', stories=stories, show_welcome=not current_user.is_authenticated, t=t)
+    try:
+        try: stories = Story.query.order_by(Story.created_at.desc()).all()
+        except: stories = []
+        
+        t = {
+            'ar': {
+                'title': 'منصة نجاحي', 'brand': 'منصة نجاحي', 'create_story': 'أنشئ قصتك', 
+                'messages': 'الرسائل', 'profile': 'ملفي', 'logout': 'خروج', 'login': 'دخول', 
+                'register': 'حساب جديد', 'main_heading': 'مسارات وتجارب ملهمة', 
+                'no_stories': 'لا توجد قصص بعد.', 'published_by': 'بواسطة:', 
+                'challenge': 'التحدي', 'turning_point': 'التحول', 'outcome': 'النتيجة',
+                'comments': 'التعليقات', 'add_comment_placeholder': 'اكتب تعليقاً...', 
+                'comment_btn': 'إرسال', 'no_comments': 'لا توجد تعليقات'
+            },
+            'en': {
+                'title': 'My Success', 'brand': 'My Success', 'create_story': 'Create Story', 
+                'messages': 'Messages', 'profile': 'Profile', 'logout': 'Logout', 
+                'login': 'Login', 'register': 'Register', 'main_heading': 'Inspiring Paths', 
+                'no_stories': 'No stories yet.', 'published_by': 'By:', 
+                'challenge': 'Challenge', 'turning_point': 'Turning Point', 'outcome': 'Outcome',
+                'comments': 'Comments', 'add_comment_placeholder': 'Write a comment...', 
+                'comment_btn': 'Send', 'no_comments': 'No comments'
+            }
+        }[session.get('lang', 'ar')]
+        
+        return render_template('home.html', stories=stories, show_welcome=not current_user.is_authenticated, t=t)
+    except Exception as e:
+        return f"<div dir='ltr' style='background:#111; color:#ff4444; padding:20px; font-family:monospace;'><h3>🚨 HOME ERROR:</h3><pre>{traceback.format_exc()}</pre></div>"
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -286,10 +290,25 @@ def clear_chat(username):
     db.session.commit()
     return redirect(url_for('messages', tab='private'))
 
+# --- مسار الأدمن المحصّن بكاشف الأخطاء الشامل ---
 @app.route('/admin')
 @login_required
 def admin_panel():
-    if not current_user.is_admin: abort(403)
-    return render_template('admin.html', users=User.query.all())
+    try:
+        if not current_user.is_admin: 
+            abort(403)
+        return render_template('admin.html', users=User.query.all())
+    except Exception as e:
+        return f"<div dir='ltr' style='background:#111; color:#ff4444; padding:20px; font-family:monospace;'><h3>🚨 ADMIN PANEL ERROR:</h3><pre>{traceback.format_exc()}</pre></div>"
 
-@app.route('/admin/delete
+@app.route('/admin/delete-user/<int:user_id>', methods=['POST'])
+@login_required
+def admin_delete_user(user_id):
+    if not current_user.is_admin: abort(403)
+    user = User.query.get_or_404(user_id)
+    db.session.delete(user)
+    db.session.commit()
+    return redirect(url_for('admin_panel'))
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
