@@ -218,7 +218,6 @@ def messages():
                 db.session.commit()
                 return redirect(url_for('messages', tab='groups', group_id=group.id))
 
-    # جلب الرسائل الخاصة
     private_msgs = []
     if chatting_with:
         other = User.query.filter_by(username=chatting_with).first()
@@ -228,12 +227,10 @@ def messages():
                     (DirectMessage.sender_id == other.id) & (DirectMessage.receiver_id == current_user.id))
             ).order_by(DirectMessage.created_at.asc()).all()
 
-    # جلب رسائل المجموعات
     group_msgs = []
     if selected_group_id:
         group_msgs = GroupMessage.query.filter_by(group_id=selected_group_id).order_by(GroupMessage.created_at.asc()).all()
 
-    # جلب المجموعات التي يشترك فيها المستخدم الحالي فقط
     my_groups = current_user.chat_groups.all() if current_user.is_authenticated else []
     all_users = User.query.filter(User.id != current_user.id).all()
 
@@ -265,7 +262,6 @@ def create_group():
         db.session.commit()
     return redirect(url_for('messages', tab='groups'))
 
-# --- مسار حذف الرسائل المحددة (جديد ومطلوب) ---
 @app.route('/delete-selected-messages', methods=['POST'])
 @login_required
 def delete_selected_messages():
@@ -281,7 +277,6 @@ def delete_selected_messages():
         else:
             DirectMessage.query.filter(DirectMessage.id.in_(ids_as_int), DirectMessage.sender_id == current_user.id).delete(synchronize_session=False)
         db.session.commit()
-        flash('تم حذف الرسائل المحددة بنجاح', 'success')
         
     if is_group:
         return redirect(url_for('messages', tab='groups', group_id=group_id))
@@ -323,4 +318,57 @@ def edit_profile():
 @app.route('/clear-chat/<username>', methods=['POST'])
 @login_required
 def clear_chat(username):
-    other_user = User.query.filter_by(username=username).first_or_404
+    other_user = User.query.filter_by(username=username).first_or_404()
+    msgs = DirectMessage.query.filter(
+        or_((DirectMessage.sender_id == current_user.id) & (DirectMessage.receiver_id == other_user.id),
+            (DirectMessage.sender_id == other_user.id) & (DirectMessage.receiver_id == current_user.id))
+    ).all()
+    for m in msgs: db.session.delete(m)
+    db.session.commit()
+    return redirect(url_for('messages', tab='private'))
+
+@app.route('/admin')
+@login_required
+def admin_panel():
+    try:
+        if not current_user.is_admin: 
+            abort(403)
+        return render_template('admin.html', users=User.query.all())
+    except Exception as e:
+        return f"<div dir='ltr' style='background:#111; color:#ff4444; padding:20px; font-family:monospace;'><h3>🚨 ADMIN PANEL ERROR:</h3><pre>{traceback.format_exc()}</pre></div>"
+
+@app.route('/admin/delete-user/<int:user_id>', methods=['POST'])
+@login_required
+def admin_delete_user(user_id):
+    if not current_user.is_admin: abort(403)
+    user = User.query.get_or_404(user_id)
+    if user.username.lower() == 'fawzi':
+        abort(400)
+    db.session.delete(user)
+    db.session.commit()
+    return redirect(url_for('admin_panel'))
+
+# --- المسار الجديد لتبديل وتعديل الصلاحيات للأدمن الآخرين ---
+@app.route('/admin/toggle-admin/<int:user_id>', methods=['POST'])
+@login_required
+def admin_toggle_admin(user_id):
+    if not current_user.is_admin: 
+        abort(403)
+    user = User.query.get_or_404(user_id)
+    
+    # جدار حماية لمنع عزل حساب فوزي الأساسي أو عزل حسابك الحالي بنفسك
+    if user.username.lower() == 'fawzi':
+        flash('خطأ حماية: لا يمكن التعديل على الحساب الجذري للمنصة.', 'danger')
+        return redirect(url_for('admin_panel'))
+        
+    if user.id == current_user.id:
+        flash('خطأ حماية: لا يمكنك عزل نفسك بنفسك.', 'danger')
+        return redirect(url_for('admin_panel'))
+        
+    user.is_admin = not user.is_admin
+    db.session.commit()
+    flash(f'تم تحديث صلاحيات {user.username} بنجاح.', 'success')
+    return redirect(url_for('admin_panel'))
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))

@@ -20,30 +20,59 @@
         </div>
     </nav>
     <div class="container">
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} rounded-pill text-center border-0 mb-4 small">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
         <div class="glass-card">
-            <h4 class="text-gold mb-4"><i class="fa-solid fa-users me-2"></i>إدارة المستخدمين</h4>
+            <h4 class="text-gold mb-4"><i class="fa-solid fa-users me-2"></i>إدارة المستخدمين والصلاحيات</h4>
             <div class="table-responsive">
                 <table class="table table-dark table-striped align-middle">
                     <thead>
                         <tr>
                             <th>الاسم</th>
                             <th>الإيميل</th>
-                            <th>إجراء</th>
+                            <th>الرتبة الحالية</th>
+                            <th>إجراءات الإدارة والمشرفين</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for u in users %}
                         <tr>
-                            <td>{{ u.username }} {% if u.is_admin %}<span class="badge bg-danger">أدمن</span>{% endif %}</td>
+                            <td>{{ u.username }}</td>
                             <td>{{ u.email }}</td>
                             <td>
-                                {% if not u.is_admin %}
-                                <form action="{{ url_for('admin_delete_user', user_id=u.id) }}" method="POST" onsubmit="return confirm('هل أنت متأكد من حذف هذا المستخدم؟');">
-                                    <button type="submit" class="btn btn-danger btn-sm rounded-pill px-3">حذف</button>
-                                </form>
+                                {% if u.username.lower() == 'fawzi' %}
+                                    <span class="badge bg-warning text-dark">المالك الأساسي</span>
+                                {% elif u.is_admin %}
+                                    <span class="badge bg-danger">مشرف / أدمن</span>
                                 {% else %}
-                                <button class="btn btn-secondary btn-sm rounded-pill px-3" disabled>محمي</button>
+                                    <span class="badge bg-secondary">مستخدم عادي</span>
                                 {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    {% if u.username.lower() != 'fawzi' and u.id != current_user.id %}
+                                        <form action="{{ url_for('admin_toggle_admin', user_id=u.id) }}" method="POST">
+                                            {% if u.is_admin %}
+                                                <button type="submit" class="btn btn-warning btn-sm rounded-pill px-3">عزل ليوزر عادي</button>
+                                            {% else %}
+                                                <button type="submit" class="btn btn-outline-warning btn-sm rounded-pill px-3">ترقية لأدمن</button>
+                                            {% endif %}
+                                        </form>
+
+                                        <form action="{{ url_for('admin_delete_user', user_id=u.id) }}" method="POST" onsubmit="return confirm('هل أنت متأكد من حذف هذا المستخدم نهائياً؟');">
+                                            <button type="submit" class="btn btn-danger btn-sm rounded-pill px-3">حذف نهائي</button>
+                                        </form>
+                                    {% else %}
+                                        <span class="text-muted small"><i class="fa-solid fa-lock me-1"></i> حساب محمي بالكامل</span>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
