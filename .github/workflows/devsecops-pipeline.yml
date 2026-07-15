@@ -1,0 +1,41 @@
+name: Build and Security Scan (DevSecOps)
+
+# 1. متى يعمل هذا المسار تلقائياً؟
+on:
+  push:
+    branches: [ "main" ] # يشتغل بمجرد عمل push لفرع main
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  security-and-build:
+    runs-on: ubuntu-latest # تشغيل الخطوات على سيرفر لينكس افتراضي توفره جيت هاب
+
+    steps:
+    # الخطوة أ: سحب الكود من المستودع
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # الخطوة ب: فحص الكود المصدري للتأكد من عدم وجود كلمات مرور مكشوفة (Secrets)
+    - name: Run Trivy Vulnerability Scanner (Repo FS Scan)
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        ignore-unfixed: true
+        format: 'table'
+        exit-code: '1' # إذا وجد ثغرات خطيرة، أوقف الـ Pipeline ولا تكمل الرفع (حماية سيبرانية صلبة)
+        severity: 'CRITICAL,HIGH'
+
+    # الخطوة ج: بناء الـ Docker Image للتأكد من سلامتها
+    - name: Build Docker Image
+      run: |
+        docker build -t masarat-app:${{ github.sha }} .
+
+    # الخطوة د: فحص الـ Docker Image نفسها بعد بنائها وقبل رفعها للسيرفر
+    - name: Run Trivy Scanner on Docker Image
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'masarat-app:${{ github.sha }}'
+        format: 'table'
+        exit-code: '1'
+        severity: 'CRITICAL,HIGH'
