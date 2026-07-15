@@ -1,5 +1,4 @@
 import os
-import traceback
 from datetime import datetime, date
 from flask import Flask, render_template, redirect, url_for, request, flash, session, abort
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -8,11 +7,13 @@ from models import db, User, Story, Comment, DirectMessage, Like, Group, GroupMe
 from sqlalchemy import or_
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Fawzi_Secure_DevSecOps_Key_2026')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Fawzi_Secure_Key_2026')
 
+# مجلد رفع الصور
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+# رابط قاعدة البيانات
 database_url = "postgresql://masarat_db_new_user:CedqCPmLtuiZKC4en8nYcguEZr33CAdP@dpg-d9bu85mcjfls739n0di0-a/masarat_db_new"
 if database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
@@ -31,32 +32,18 @@ def load_user(user_id):
 
 with app.app_context():
     try:
-        # لن نمسح البيانات، فقط نبني الجداول الناقصة
+        # إنشاء الجداول فقط دون مسحها لكي لا تفقد حسابك أبداً
         db.create_all() 
-        fawzi_admin = User.query.filter(User.username.ilike('fawzi')).first()
-        if fawzi_admin:
-            fawzi_admin.is_admin = True
-            db.session.commit()
     except Exception as db_err:
         print(f"⚠️ DATABASE ERROR: {db_err}")
 
-# =========================================================
-# 🛠️ المسارات السرية للإدارة وتهيئة النظام
-# =========================================================
-@app.route('/setup-database-fawzi-2026')
-def setup_database():
-    try:
-        db.drop_all()
-        db.create_all()
-        return "<h1 style='color:green; text-align:center; margin-top:50px;'>✅ تم مسح وبناء قاعدة البيانات بنجاح!</h1>"
-    except Exception as e:
-        return f"<h1 style='color:red;'>خطأ: {e}</h1>"
-
+# مسار لجعل حسابك أدمن فوراً عند الدخول عليه
 @app.route('/make-me-admin')
 @login_required
 def make_me_admin():
     current_user.is_admin = True
     db.session.commit()
+    flash('تم تفعيل صلاحية الأدمن لك بنجاح!', 'success')
     return redirect(url_for('home'))
 
 def is_disposable_email(email):
@@ -90,34 +77,31 @@ def toggle_lang():
 
 @app.route('/')
 def home():
-    try:
-        try: stories = Story.query.order_by(Story.created_at.desc()).all()
-        except: stories = []
-        
-        t = {
-            'ar': {
-                'title': 'منصة نجاحي', 'brand': 'منصة نجاحي', 'create_story': 'أنشئ قصتك', 
-                'messages': 'الرسائل', 'profile': 'ملفي', 'logout': 'خروج', 'login': 'دخول', 
-                'register': 'حساب جديد', 'main_heading': 'مسارات وتجارب ملهمة', 
-                'no_stories': 'لا توجد قصص بعد.', 'published_by': 'بواسطة:', 
-                'challenge': 'التحدي', 'turning_point': 'التحول', 'outcome': 'النتيجة',
-                'comments': 'التعليقات', 'add_comment_placeholder': 'اكتب تعليقاً...', 
-                'comment_btn': 'إرسال', 'no_comments': 'لا توجد تعليقات'
-            },
-            'en': {
-                'title': 'My Success', 'brand': 'My Success', 'create_story': 'Create Story', 
-                'messages': 'Messages', 'profile': 'Profile', 'logout': 'Logout', 
-                'login': 'Login', 'register': 'Register', 'main_heading': 'Inspiring Paths', 
-                'no_stories': 'No stories yet.', 'published_by': 'By:', 
-                'challenge': 'Challenge', 'turning_point': 'Turning Point', 'outcome': 'Outcome',
-                'comments': 'Comments', 'add_comment_placeholder': 'Write a comment...', 
-                'comment_btn': 'Send', 'no_comments': 'No comments'
-            }
-        }[session.get('lang', 'ar')]
-        
-        return render_template('home.html', stories=stories, show_welcome=not current_user.is_authenticated, t=t)
-    except Exception as e:
-        return f"<div dir='ltr' style='background:#111; color:#ff4444; padding:20px; font-family:monospace;'><h3>🚨 ERROR:</h3><pre>{traceback.format_exc()}</pre></div>"
+    try: stories = Story.query.order_by(Story.created_at.desc()).all()
+    except: stories = []
+    
+    t = {
+        'ar': {
+            'title': 'منصة نجاحي', 'brand': 'منصة نجاحي', 'create_story': 'أنشئ قصتك', 
+            'messages': 'الرسائل', 'profile': 'ملفي', 'logout': 'خروج', 'login': 'دخول', 
+            'register': 'حساب جديد', 'main_heading': 'مسارات وتجارب ملهمة', 
+            'no_stories': 'لا توجد قصص بعد.', 'published_by': 'بواسطة:', 
+            'challenge': 'التحدي', 'turning_point': 'التحول', 'outcome': 'النتيجة',
+            'comments': 'التعليقات', 'add_comment_placeholder': 'اكتب تعليقاً...', 
+            'comment_btn': 'إرسال', 'no_comments': 'لا توجد تعليقات'
+        },
+        'en': {
+            'title': 'My Success', 'brand': 'My Success', 'create_story': 'Create Story', 
+            'messages': 'Messages', 'profile': 'Profile', 'logout': 'Logout', 
+            'login': 'Login', 'register': 'Register', 'main_heading': 'Inspiring Paths', 
+            'no_stories': 'No stories yet.', 'published_by': 'By:', 
+            'challenge': 'Challenge', 'turning_point': 'Turning Point', 'outcome': 'Outcome',
+            'comments': 'Comments', 'add_comment_placeholder': 'Write a comment...', 
+            'comment_btn': 'Send', 'no_comments': 'No comments'
+        }
+    }[session.get('lang', 'ar')]
+    
+    return render_template('home.html', stories=stories, show_welcome=not current_user.is_authenticated, t=t)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -263,9 +247,6 @@ def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
     return render_template('profile.html', user=user, stories=Story.query.filter_by(user_id=user.id).all(), is_blocked=False)
 
-# =========================================================
-# 🛠️ مسار تعديل البروفايل (تحديث خيارات الإيميل والرقم)
-# =========================================================
 @app.route('/edit-profile', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
@@ -283,12 +264,10 @@ def edit_profile():
             current_user.country = request.form.get('country', '').strip()
             current_user.city = request.form.get('city', '').strip()
             
-            # تحديث خيارات الخصوصية لإظهار الإيميل والرقم
             current_user.show_email = 'show_email' in request.form
             current_user.show_phone = 'show_phone' in request.form
             
             db.session.commit()
-            flash('تم التحديث بنجاح!', 'success')
             return redirect(url_for('profile', username=current_user.username))
         except Exception as e:
             return f"<h3 style='color:red;'>خطأ أثناء الحفظ: {e}</h3>"
@@ -311,7 +290,6 @@ def clear_chat(username):
 @login_required
 def admin_panel():
     if not current_user.is_admin: abort(403)
-    return render_template('admin.html', users=User.query.all(), reports=Report.query.all(), stories=Story.query.all())
+    return render_template('admin.html', users=User.query.all())
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
+@app.route('/admin/delete
