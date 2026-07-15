@@ -55,11 +55,11 @@ def home():
     # لغة العرض الحالية
     lang = session.get('lang', 'ar')
     
-    # مصفوفة الترجمة الثابتة للعناصر الأساسية بالواجهة (Localization)
+    # مصفوفة الترجمة الثابتة للعناصر الأساسية بالواجهة بالاسم الجديد "منصة نجاحي هو نجاحك"
     translations = {
         'ar': {
-            'title': 'منصة مسارات - قصص ملهمة',
-            'brand': 'منصة مسارات',
+            'title': 'منصة نجاحي هو نجاحك - قصص ملهمة',
+            'brand': 'منصة نجاحي هو نجاحك',
             'welcome': 'مرحباً،',
             'create_story': 'أنشئ قصتك',
             'messages': 'الرسائل الخاصة',
@@ -79,8 +79,8 @@ def home():
             'login_to_comment': 'سجل دخولك لتستطيع التفاعل وكتابة تعليق.'
         },
         'en': {
-            'title': 'Masarat Platform - Inspiring Stories',
-            'brand': 'Masarat Platform',
+            'title': 'My Success is Your Success - Inspiring Stories',
+            'brand': 'My Success is Your Success',
             'welcome': 'Welcome,',
             'create_story': 'Create Story',
             'messages': 'Direct Messages',
