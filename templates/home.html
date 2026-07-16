@@ -14,6 +14,13 @@
         .btn-gold:hover { background-color: #b5952f; color: #000; }
         .glass-card { background: #151515; border: 1px solid #333; border-radius: 16px; padding: 25px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .hero-section { padding: 80px 0; text-align: center; background: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%); border-bottom: 1px solid #333; margin-bottom: 40px; }
+        
+        /* تنسيق القصص الجديد */
+        .stories-scroll { display: flex; overflow-x: auto; gap: 20px; padding: 20px 0; scrollbar-width: none; }
+        .story-item { text-align: center; flex-shrink: 0; }
+        .story-ring { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #d4af37; padding: 3px; cursor: pointer; transition: 0.3s; background: #1a1a1a; }
+        .story-ring:hover { transform: scale(1.1); box-shadow: 0 0 15px #d4af37; }
+        .story-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
     </style>
 </head>
 <body>
@@ -49,6 +56,17 @@
     {% endif %}
 
     <div class="container py-4">
+        <div class="stories-scroll">
+            {% for story in stories %}
+            <div class="story-item">
+                <div class="story-ring">
+                    <img src="/static/uploads/{{ story.author.profile_pic if story.author.profile_pic else 'default.png' }}" class="story-img">
+                </div>
+                <small class="text-white d-block mt-2" style="font-size: 0.8rem;">{{ story.author.username }}</small>
+            </div>
+            {% endfor %}
+        </div>
+
         <h2 class="mb-5 text-center fw-bold text-white"><i class="fa-solid fa-fire text-gold me-2"></i>{{ t['main_heading'] }}</h2>
         <div class="row justify-content-center">
             <div class="col-lg-9">
@@ -70,16 +88,11 @@
                         <h6 class="mt-4 text-white-50 fw-bold"><i class="fa-solid fa-flag-checkered me-2"></i>{{ t['outcome'] }}</h6>
                         <p class="text-white mb-4">{{ story.outcome }}</p>
                         <hr class="border-secondary mb-3">
-                        
                         <div class="d-flex align-items-center gap-3 mb-3">
                             <form action="{{ url_for('like_story', story_id=story.id) }}" method="POST">
                                 {% set user_liked = false %}
                                 {% if current_user.is_authenticated %}
-                                    {% for like in story.likes %}
-                                        {% if like.user_id == current_user.id %}
-                                            {% set user_liked = true %}
-                                        {% endif %}
-                                    {% endfor %}
+                                    {% for like in story.likes %}{% if like.user_id == current_user.id %}{% set user_liked = true %}{% endif %}{% endfor %}
                                 {% endif %}
                                 <button type="submit" class="btn btn-sm btn-outline-light rounded-pill">
                                     <i class="fa-solid fa-heart {% if user_liked %}text-danger{% endif %}"></i> {{ story.likes|length }}
@@ -87,29 +100,17 @@
                             </form>
                             <span class="text-white-50 small"><i class="fa-solid fa-comment"></i> {{ story.comments|length }} {{ t['comments'] }}</span>
                         </div>
-
                         <div class="bg-dark p-3 rounded-3 mb-3 border border-secondary">
                             {% for comment in story.comments %}
-                                <div class="mb-2">
-                                    <strong class="text-gold small">{% if comment.author %}{{ comment.author.username }}{% endif %}</strong>
-                                    <span class="text-white ms-2 small">{{ comment.content }}</span>
-                                </div>
-                            {% else %}
-                                <p class="text-muted small mb-0">{{ t['no_comments'] }}</p>
-                            {% endfor %}
+                                <div class="mb-2"><strong class="text-gold small">{% if comment.author %}{{ comment.author.username }}{% endif %}</strong> <span class="text-white ms-2 small">{{ comment.content }}</span></div>
+                            {% else %}<p class="text-muted small mb-0">{{ t['no_comments'] }}</p>{% endfor %}
                         </div>
-
                         {% if current_user.is_authenticated %}
                             <form action="{{ url_for('add_comment', story_id=story.id) }}" method="POST" class="d-flex gap-2">
                                 <input type="text" name="content" class="form-control form-control-sm bg-dark text-white border-secondary rounded-pill px-3" placeholder="{{ t['add_comment_placeholder'] }}" required>
                                 <button type="submit" class="btn btn-gold btn-sm rounded-pill px-3">{{ t['comment_btn'] }}</button>
                             </form>
                         {% endif %}
-                    </div>
-                {% else %}
-                    <div class="text-center text-muted mt-5">
-                        <i class="fa-solid fa-ghost fs-1 mb-3"></i>
-                        <h5>{{ t['no_stories'] }}</h5>
                     </div>
                 {% endfor %}
             </div>
